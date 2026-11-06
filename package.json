@@ -1,5 +1,5 @@
 {
-  "name": "arkiv-viz",
+  "name": "axis",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,16 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:unit": "vitest run",
-    "test:live": "node scripts/verify-live.mjs"
+    "test:live": "node scripts/verify-live.mjs",
+    "worker": "tsx scripts/axis-worker.ts",
+    "worker:once": "tsx scripts/axis-worker.ts --once",
+    "test:e2e": "playwright test",
+    "worker:renew": "tsx scripts/axis-renew.ts",
+    "test:axis:live": "tsx scripts/axis-live.ts",
+    "typecheck": "tsc --noEmit",
+    "test:axis:ownership": "tsx scripts/axis-owner-check.ts",
+    "test:axis:continuous": "tsx scripts/axis-continuous-check.ts",
+    "dashboard:seed": "tsx scripts/axis-prebuilt.ts"
   },
   "dependencies": {
     "@arkiv-network/sdk": "^1.0.1",
@@ -28,6 +37,7 @@
     "viem": "^2.57.16"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -35,7 +45,9 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^3.2.7"
-  }
+  },
+  "type": "module"
 }
