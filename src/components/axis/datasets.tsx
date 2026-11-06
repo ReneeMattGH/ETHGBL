@@ -1,0 +1,55 @@
+"use client";
+import * as React from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Database, Plus } from "lucide-react";
+import type { Dataset, CoverageSummary, PlatformConfig } from "@/lib/axis/model";
+import { api, useApi, PageIntro, Panel, Field, Notice, Loading, Empty, DatasetCards, RefreshButton, CoverageNotice, QueryEvidence, TransferTable, MetricGrid, Stat, short, type QueryResult } from "./shared";
+import { useAxisWallet, createDataset, requestIngestion, setDatasetEnabled, renewEntity, walletError } from "./wallet";
+
+export function DatasetExplorer() {
+  const resource = useApi<{ datasets: Dataset[] }>("datasets", 30000), [search, setSearch] = React.useState("");
+  const datasets = resource.data?.datasets.filter(item => `${item.name} ${item.owner} ${item.contract}`.toLowerCase().includes(search.toLowerCase())) ?? [];
+  return <><PageIntro title="Data Explorer" description="Explore wallet-owned datasets and the source coverage behind every result."><Link href="/datasets/new" className="axis-button"><Plus size={16} />Create dataset</Link><RefreshButton loading={resource.loading} onClick={resource.refresh} /></PageIntro><Panel><Field label="Find a dataset"><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search name, owner or contract" /></Field></Panel>{resource.error && <Notice tone="error">{resource.error}</Notice>}{resource.loading && !resource.data ? <Loading /> : datasets.length ? <DatasetCards datasets={datasets} /> : <Empty><Database size={28} /><p>No matching AXIS datasets.</p><Link href="/datasets/new" className="axis-button">Create the first dataset</Link></Empty>}</>;
+}
+export function NewDataset() {
+  const config = useApi<PlatformConfig>("config"), wallet = useAxisWallet(), router = useRouter();
+  const [name, setName] = React.useState("Polygon USDC transfers"), [description, setDescription] = React.useState("");
+  const [from, setFrom] = React.useState(""), [to, setTo] = React.useState(""), [continuous, setContinuous] = React.useState(false);
+  const [busy, setBusy] = React.useState(false), [error, setError] = React.useState<string | null>(null), [transaction, setTransaction] = React.useState<string | null>(null);
+  React.useEffect(() => { if (config.data?.finalizedBlock) { setFrom(value => value || (BigInt(config.data!.finalizedBlock!) - 1n).toString()); setTo(value => value || config.data!.finalizedBlock!); } }, [config.data]);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault(); setBusy(true); setError(null);
+    try {
+      const account = wallet.address ?? await wallet.connect();
+      if (!config.data?.writer) throw new Error("Worker identity is unavailable.");
+      if (!/^\d+$/.test(from) || !/^\d+$/.test(to)) throw new Error("Enter valid source block boundaries.");
+      if (config.data.finalizedBlock && BigInt(to) > BigInt(config.data.finalizedBlock)) throw new Error("Choose blocks at or below the finalized source boundary.");
+      const result = await createDataset(account, { name, description, writer: config.data.writer, startBlock: from, endBlock: continuous ? "0" : to, continuous });
+      setTransaction(result.txHash);
+      await api(`datasets/${result.entityKey}`);
+      router.push(`/datasets/${result.entityKey}`);
+    } catch (caught) { setError(walletError(caught)); } finally { setBusy(false); }
+  };
+  return <><PageIntro title="Create a dataset" description="Publish a dataset definition owned by your wallet. The local worker publishes and verifies its records." /><Panel title="Polygon native USDC"><form onSubmit={submit} className="axis-form-stack"><div className="axis-form-grid"><Field label="Dataset name"><input value={name} maxLength={80} required onChange={event => setName(event.target.value)} /></Field><Field label="Source contract"><input readOnly value="0x3c499c542cef5e3811e1192ce70d8cc03d5c3359" /></Field></div><Field label="Description"><textarea value={description} maxLength={2000} onChange={event => setDescription(event.target.value)} rows={3} /></Field><div className="axis-form-grid"><Field label="Start block"><input inputMode="numeric" required value={from} onChange={event => setFrom(event.target.value)} /></Field><Field label="End block" hint={continuous ? "Continuous imports advance from the start toward finalized blocks." : "Inclusive range. Start with 2 blocks; finite datasets support up to 1000."}><input inputMode="numeric" required value={to} disabled={continuous} onChange={event => setTo(event.target.value)} /></Field></div><label className="axis-checkbox"><input type="checkbox" checked={continuous} onChange={event => setContinuous(event.target.checked)} />Continuously import new finalized blocks while the local worker is running</label><Notice>Finalized source block: {config.data?.finalizedBlock ?? "checking…"}. Definitions initially live for 30 days and can be renewed by their owner. Published records identify the service writer {short(config.data?.writer ?? "")}.</Notice>{config.error && <Notice tone="error">{config.error}</Notice>}{config.data?.error && <Notice tone="error">{config.data.error}</Notice>}{error && <Notice tone="error">{error}</Notice>}{transaction && <Notice tone="success">Published transaction {transaction}</Notice>}<button className="axis-button" type="submit" disabled={busy || !config.data?.writer}>{busy ? "Confirming wallet transaction…" : "Publish dataset definition"}</button></form></Panel></>;
+}
+export function DatasetDetail({ entityKey }: { entityKey: string }) {
+  const detail = useApi<{ dataset: Dataset; coverage: CoverageSummary }>(`datasets/${entityKey}`, 15000), config = useApi<PlatformConfig>("config", 15000), wallet = useAxisWallet();
+  const [busy, setBusy] = React.useState(false), [message, setMessage] = React.useState<string | null>(null), [error, setError] = React.useState<string | null>(null);
+  const dataset = detail.data?.dataset, ready = Boolean(detail.data?.coverage.throughBlock && !detail.data.coverage.gaps.length);
+  const query = useApi<QueryResult>(ready ? "query" : null, 0, { datasetKey: entityKey, mode: "analytics", filters: {} });
+  const rows = useApi<QueryResult>(ready ? "query" : null, 0, { datasetKey: entityKey, mode: "page", filters: {}, limit: 10 });
+  const schema = useApi<{ observed: boolean; fields: { name: string; type: string; indexed: boolean }[] }>(ready ? `schema/${entityKey}` : null);
+  const owned = dataset?.owner === wallet.address?.toLowerCase();
+  const action = async (kind: "import" | "toggle" | "renew") => {
+    if (!wallet.address || !dataset) return;
+    setBusy(true); setMessage(null); setError(null);
+    try {
+      if (kind === "import") { const result = await requestIngestion(wallet.address, entityKey); setMessage(result.complete ? result.message : "Import queued. Watch the ingestion monitor for verified progress."); }
+      if (kind === "toggle") { await setDatasetEnabled(wallet.address, entityKey, !dataset.enabled); setMessage(dataset.enabled ? "Dataset paused." : "Dataset enabled."); }
+      if (kind === "renew") { await renewEntity(wallet.address, entityKey); setMessage("Dataset definition renewed for 30 days from now."); }
+      detail.refresh();
+    } catch (caught) { setError(walletError(caught)); } finally { setBusy(false); }
+  };
+  return <><PageIntro title={dataset?.name ?? "Dataset"} description={dataset?.description || "Polygon native USDC · ERC-20 Transfer events"}><RefreshButton loading={detail.loading} onClick={() => { detail.refresh(); rows.refresh(); query.refresh(); }} /><Link href={`/query?dataset=${entityKey}`} className="axis-button secondary">Query dataset</Link></PageIntro>{detail.error && <Notice tone="error">{detail.error}</Notice>}{detail.loading && !dataset && <Loading />}{dataset && detail.data && <><div className="axis-stats"><Stat label="Source chain" value="Polygon 137" /><Stat label="Verified transfers" value={detail.data.coverage.actualRows.toLocaleString()} /><Stat label="Checkpoint" value={detail.data.coverage.throughBlock ?? "Not imported"} /><Stat label="Definition" value={dataset.enabled ? "Enabled" : "Paused"} detail={dataset.continuous ? "Continuous ingestion" : "Bounded import"} /></div><CoverageNotice coverage={detail.data.coverage} /><Panel title="Ownership & ingestion"><dl className="axis-details"><dt>Dataset owner</dt><dd>{dataset.owner}</dd><dt>Record publisher</dt><dd>{dataset.writer}</dd><dt>Contract</dt><dd>{dataset.contract}</dd><dt>Requested blocks</dt><dd>{dataset.startBlock}–{dataset.endBlock === "0" ? "latest finalized" : dataset.endBlock}</dd><dt>Definition expiration</dt><dd>Arkiv block {dataset.expiresAt}</dd></dl>{!config.data?.worker.running && <Notice>Start the local worker with <code>npm.cmd run worker</code> to process queued imports.</Notice>}<div className="axis-actions">{owned ? <><button className="axis-button" disabled={busy || !dataset.enabled} onClick={() => void action("import")}>{busy ? "Working…" : "Run incremental import"}</button><button className="axis-button secondary" disabled={busy} onClick={() => void action("toggle")}>{dataset.enabled ? "Pause dataset" : "Enable dataset"}</button><button className="axis-button secondary" disabled={busy} onClick={() => void action("renew")}>Renew definition</button></> : <p>Connect the owner wallet to manage ingestion.</p>}<Link className="axis-inline-link" href="/ingestion">View ingestion monitor →</Link></div>{message && <Notice tone="success">{message}</Notice>}{error && <Notice tone="error">{error}</Notice>}</Panel>{query.error && <Notice tone="error">{query.error}</Notice>}{query.data?.analytics && <><MetricGrid analytics={query.data.analytics} /><QueryEvidence result={query.data} /></>}<Panel title="Latest verified transfers">{rows.loading && !rows.data ? <Loading /> : <TransferTable rows={rows.data?.entities ?? []} />}{rows.error && <Notice tone="error">{rows.error}</Notice>}</Panel><Panel title="Observed Arkiv field types">{schema.error && <Notice tone="error">{schema.error}</Notice>}<div className="axis-table-wrap"><table><thead><tr><th>Attribute</th><th>Arkiv type</th><th>Indexed</th></tr></thead><tbody>{schema.data?.fields.map(field => <tr key={field.name}><td>{field.name}</td><td>{field.type}</td><td>{field.indexed ? "Yes" : "No"}</td></tr>)}</tbody></table></div>{!schema.data?.observed && <p>Field types appear after a transfer entity is available in Arkiv.</p>}</Panel><Panel title="Verified coverage manifests"><div className="axis-table-wrap"><table><thead><tr><th>Source blocks</th><th>Records</th><th>Verified at</th><th>Arkiv transaction</th></tr></thead><tbody>{detail.data.coverage.manifests.map(item => <tr key={item.key}><td>{item.fromBlock}–{item.toBlock}</td><td>{item.rows}</td><td>{new Date(item.verifiedAt).toLocaleString()}</td><td>{item.transactionHashes[0] && <a className="axis-inline-link" href={`https://rabdi.explorer.arkiv.network/tx/${item.transactionHashes[0]}`} target="_blank" rel="noreferrer">{short(item.transactionHashes[0])}</a>}</td></tr>)}</tbody></table></div></Panel></>}</>;
+}
