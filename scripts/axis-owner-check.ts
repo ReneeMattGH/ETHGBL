@@ -1,0 +1,33 @@
+import nextEnv from "@next/env";
+import { readFileSync } from "node:fs";
+import { parseEnv } from "node:util";
+import { privateKeyToAccount } from "viem/accounts";
+import { createWalletClient, ExpirationTime } from "@arkiv-network/sdk";
+import { rabdi } from "@arkiv-network/sdk/chains";
+import { http, stringToBytes, type Hex } from "viem";
+nextEnv.loadEnvConfig(process.cwd());
+const { arkivEndpoint, safeError } = await import("../src/lib/axis/runtime");
+const { DatasetSchema, DashboardSchema } = await import("../src/lib/axis/schemas");
+const { getDataset, getDashboard } = await import("../src/lib/axis/store");
+const { jobMessage } = await import("../src/lib/axis/auth");
+const { randomBytes } = await import("node:crypto");
+const evidence = JSON.parse(readFileSync(".axis/browser-evidence.json", "utf8"));
+const account = privateKeyToAccount(parseEnv(readFileSync(".env.browser-test.local", "utf8")).AXIS_TEST_PRIVATE_KEY as Hex);
+const wallet = createWalletClient({ account, chain: rabdi({ accessKey: process.env.ARKIV_ACCESS_KEY ?? "" }), transport: http(arkivEndpoint(), { timeout: 30000, retryCount: 0 }) });
+const check = (name: string, ok: boolean) => { console.log(JSON.stringify({ check: name, ok })); if (!ok) throw new Error(name); };
+try {
+  await wallet.patchEntity(DatasetSchema, evidence.datasetKey, { set: { enabled: false } });
+  check("owner can pause ingestion", !(await getDataset(evidence.datasetKey)).enabled);
+  const timestamp = Date.now(), nonce = randomBytes(24).toString("hex");
+  const signature = await wallet.signMessage({ message: jobMessage(evidence.datasetKey, nonce, timestamp) });
+  const response = await fetch((process.env.BASE_URL ?? "http://localhost:3100") + "/api/axis/ingestion", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ datasetKey: evidence.datasetKey, nonce, timestamp, signature }) });
+  check("paused dataset rejects a signed import request", response.status === 400);
+  await wallet.patchEntity(DatasetSchema, evidence.datasetKey, { set: { enabled: true } });
+  check("owner can resume ingestion", (await getDataset(evidence.datasetKey)).enabled);
+  const dashboard = await getDashboard(evidence.dashboardKey);
+  const document = { ...dashboard.document, description: "Owner update verified against the published Arkiv definition." };
+  await wallet.patchEntity(DashboardSchema, evidence.dashboardKey, { set: { document: stringToBytes(JSON.stringify(document)) } });
+  check("owner can update a dashboard", (await getDashboard(evidence.dashboardKey)).document.description === document.description);
+  await wallet.extendEntity({ entityKey: evidence.dashboardKey, expiration: ExpirationTime.fromDays(30) });
+  check("owner can renew a dashboard", BigInt((await getDashboard(evidence.dashboardKey)).expiresAt) > BigInt(dashboard.expiresAt));
+} catch (error) { console.log(JSON.stringify({ ownerChecks: "failed", error: safeError(error) })); process.exitCode = 1; }
