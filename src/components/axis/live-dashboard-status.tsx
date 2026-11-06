@@ -1,0 +1,11 @@
+"use client";
+import Link from "next/link";
+import type { SavedDocument, PlatformConfig } from "@/lib/axis/model";
+import { useApi, Notice, Panel, Stat, type QueryResult } from "./shared";
+export function LiveDashboardStatus({ dashboard }: { dashboard: SavedDocument }) {
+  const resource = useApi<QueryResult>("query", dashboard.document.refreshMs, { ...dashboard.document.widgets[0].query, mode: "analytics", limit: 25 });
+  const config = useApi<PlatformConfig>("config", 30000);
+  const result = resource.data;
+  const lag = result?.coverage.throughBlock && config.data?.finalizedBlock ? (BigInt(config.data.finalizedBlock) - BigInt(result.coverage.throughBlock)).toString() : null;
+  return <Panel title="Live coverage & data freshness">{resource.error && <Notice tone="error">{resource.error}</Notice>}<div className="axis-stats"><Stat label="Rolling calculation window" value={result ? `${result.scope.fromBlock}–${result.scope.toBlock}` : "Reading…"} detail={`Latest ${dashboard.document.widgets[0].query.filters.lookbackBlocks ?? "all"} verified blocks, clipped to available coverage`} /><Stat label="Transfers in this window" value={result?.analytics?.transfers.toLocaleString() ?? "—"} detail="Complete matching result scanned from Arkiv" /><Stat label="Source lag" value={lag === null ? "—" : `${lag} blocks`} detail={`Polygon finalized #${config.data?.finalizedBlock ?? "checking"}`} /><Stat label="Ingestion worker" value={config.data?.worker.running ? "Running" : "Offline"} detail={result ? `Last query ${new Date(result.fetchedAt).toLocaleTimeString()}` : "Waiting for the first verified import"} /></div><p>The query window advances when an import passes source-to-Arkiv verification. Refreshing every 30 seconds does not imply that ingestion has caught up with Polygon.</p>{config.data && !config.data.worker.running && <Notice>The worker is offline. Queries still read published data; start the local worker to ingest new blocks.</Notice>}<div className="axis-actions"><Link className="axis-inline-link" href={`/datasets/${dashboard.document.widgets[0].query.datasetKey}`}>Inspect coverage and provenance →</Link><Link className="axis-inline-link" href="/ingestion">Open ingestion monitor →</Link></div></Panel>;
+}
