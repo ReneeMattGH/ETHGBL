@@ -1,0 +1,1 @@
+export const jobMessage = (datasetKey: string, nonce: string, timestamp: number) => `AXIS local ingestion request\nDataset: ${datasetKey.toLowerCase()}\nNonce: ${nonce}\nIssued at: ${timestamp}\nThis signature authorizes a bounded import of this dataset. It does not transfer tokens.`;

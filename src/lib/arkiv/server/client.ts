@@ -19,7 +19,7 @@ export class ArkivConfigurationError extends Error {
 }
 
 export const queryTimeoutMs = (() => {
-  const parsed = Number(process.env.ARKIV_QUERY_TIMEOUT_MS);
+  const parsed = Number(process.env.ARKIV_QUERY_TIMEOUT_MS?.trim() || 15000);
   if (!Number.isFinite(parsed)) return 15_000;
   return Math.min(Math.max(Math.round(parsed), 3_000), 60_000);
 })();

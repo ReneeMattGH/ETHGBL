@@ -29,7 +29,7 @@ export const DEFAULT_NETWORK: NetworkId = "rabdi";
 export const NETWORK_OPTIONS: NetworkSummary[] = Object.values(NETWORKS);
 
 export function isNetworkId(value: unknown): value is NetworkId {
-  return typeof value === "string" && value in NETWORKS;
+  return typeof value === "string" && Object.hasOwn(NETWORKS, value);
 }
 
 export function getNetwork(id: NetworkId): NetworkSummary {
