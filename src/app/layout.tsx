@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AppProviders } from "@/components/providers/app-providers";
 import { AppShell } from "@/components/app-shell";
 import "./globals.css";
+import "./axis.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,19 +17,19 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "ARKIV VIZ — Query-to-Dashboard Studio",
-    template: "%s · ARKIV VIZ",
+    default: "AXIS — Arkiv Exploration & Intelligence",
+    template: "%s · AXIS",
   },
   description:
     "Turn live Arkiv queries into interactive dashboards. Real entities, real fields, real refresh cycles.",
-  applicationName: "ARKIV VIZ",
+  applicationName: "AXIS",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} dark`}
+      className={`${geistSans.variable} ${geistMono.variable}`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
