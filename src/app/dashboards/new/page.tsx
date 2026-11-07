@@ -1,3 +1,4 @@
 import { Suspense } from "react";
 import { DashboardBuilder } from "@/components/axis/dashboards";
-export default function NewDashboardPage() { return <Suspense fallback={<p>Opening dashboard builder...</p>}><DashboardBuilder /></Suspense>; }
+import { Loading } from "@/components/axis/shared";
+export default function NewDashboardPage() { return <Suspense fallback={<Loading label="Opening dashboard builder…" />}><DashboardBuilder /></Suspense>; }

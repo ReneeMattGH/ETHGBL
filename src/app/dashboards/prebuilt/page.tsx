@@ -1,2 +1,2 @@
-import { PrebuiltDashboard } from "@/components/axis/prebuilt";
-export default function AdvancedDashboardPage() { return <PrebuiltDashboard />; }
+import { redirect } from "next/navigation";
+export default function FormerPrebuiltPage() { redirect("/dashboards"); }

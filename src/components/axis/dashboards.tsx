@@ -1,67 +1,69 @@
 "use client";
+
 import * as React from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import type { Dataset, AxisWidget, DashboardDocument, SavedDocument, SavedQuery } from "@/lib/axis/model";
-import { validateDashboard, validateFilters } from "@/lib/axis/core";
-import { api, useApi, PageIntro, Panel, Field, Notice, Loading, Empty, DatasetSelect, FilterFields, QueryEvidence, TransferTable, Stat, RefreshButton, short, type QueryResult } from "./shared";
-import { useAxisWallet, publishDashboard, renewEntity, removeEntity, walletError } from "./wallet";
-import { AnalyticsChart } from "./charts";
-import { LiveDashboardStatus } from "./live-dashboard-status";
-import { METRIC_LABELS } from "@/lib/axis/model";
-const DRAFT_KEY = "axis:dashboard-draft:v1";
-function Widget({ widget, refreshMs = 0 }: { widget: AxisWidget; refreshMs?: number }) {
-  const resource = useApi<QueryResult>("query", refreshMs, { ...widget.query, mode: widget.kind === "table" ? "page" : "analytics", limit: 25 });
-  const analytics = resource.data?.analytics;
-  return <section className={`axis-panel axis-widget width-${widget.width}`}><div className="axis-panel-heading"><h2>{widget.title || widget.kind}</h2><RefreshButton loading={resource.loading} onClick={resource.refresh} /></div>{resource.error && <Notice tone="error">{resource.data ? "Refresh failed; showing the last successful result. " : ""}{resource.error}</Notice>}{resource.loading && !resource.data && <Loading />}{resource.data && <><p className="axis-widget-meta">{resource.data.dataset.name} · blocks {resource.data.scope.fromBlock}–{resource.data.scope.toBlock} · {new Date(resource.data.fetchedAt).toLocaleTimeString()}</p>{!resource.data.coverage.complete && <Notice>Metrics cover the verified prefix. Requested dataset coverage is incomplete.</Notice>}{widget.kind === "table" ? <><TransferTable rows={resource.data.entities ?? []} /><p className="axis-chart-note">Latest {resource.data.entities?.length ?? 0} matching records shown. Use Query Studio for all pages and full exports.</p></> : analytics && (widget.kind === "metric" ? <Stat label={METRIC_LABELS[widget.metric]} value={analytics[widget.metric] ?? "Not available"} detail={[`All ${analytics.transfers} matching transfers scanned`, widget.metric === "uniqueWallets" ? `${analytics.uniqueSenders} senders; ${analytics.uniqueRecipients} recipients, including the zero address` : "", widget.metric === "medianAmount" ? `Mean ${analytics.averageAmount ?? "unavailable"} USDC, rounded half-up to 6 decimals` : "", widget.metric === "p90Amount" ? "Nearest-rank percentile, calculated using exact base units" : ""].filter(Boolean).join(". ")} /> : <AnalyticsChart analytics={analytics} widget={widget} />)}<QueryEvidence result={resource.data} /></>}</section>;
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Filter, RefreshCw } from "lucide-react";
+import type { Dataset, QueryDefinition, SavedDocument } from "@/lib/axis/model";
+import { DashboardFilters, type FilterValidity } from "./dashboard-filters";
+import { DashboardReport, type ReportStatus } from "./dashboard-report";
+import { useApi, Notice, Loading, PageIntro } from "./shared";
+import { renewEntity, removeEntity, useAxisWallet, walletError } from "./wallet";
+import { DashboardBuilder } from "./dashboard-builder";
+
+export { DashboardCatalog } from "./dashboard-catalog";
+export { DashboardBuilder };
+
+function PublicReport({ dashboard, owned, busy, onManage, error, message, onError, onMessage }: {
+  dashboard: SavedDocument; owned: boolean; busy: boolean; onManage: (action: "renew" | "delete") => void;
+  error: string | null; message: string | null; onError: (message: string) => void; onMessage: (message: string) => void;
+}) {
+  const doc = dashboard.document;
+  const catalog = useApi<{ datasets: Dataset[] }>("datasets");
+  const [draft, setDraft] = React.useState<QueryDefinition>(doc.query ?? doc.widgets[0].query);
+  const [applied, setApplied] = React.useState<QueryDefinition | null>(doc.query ?? null);
+  const [changed, setChanged] = React.useState(false), [filtersOpen, setFiltersOpen] = React.useState(true);
+  const [revision, setRevision] = React.useState(0), [refreshMs, setRefreshMs] = React.useState(doc.refreshMs);
+  const [validity, setValidity] = React.useState<FilterValidity>({ query: null, error: null, waiting: true });
+  const [status, setStatus] = React.useState<ReportStatus>({ loading: false, error: null, fetchedAt: null });
+  const key = validity.query ? JSON.stringify(validity.query) : "";
+  React.useEffect(() => {
+    if (!changed || !key) return;
+    const timer = setTimeout(() => setApplied(JSON.parse(key) as QueryDefinition), 350);
+    return () => clearTimeout(timer);
+  }, [changed, key]);
+  const receiveValidity = React.useCallback((next: FilterValidity) => setValidity(current => JSON.stringify(current) === JSON.stringify(next) ? current : next), []);
+  const receiveStatus = React.useCallback((next: ReportStatus) => setStatus(current => JSON.stringify(current) === JSON.stringify(next) ? current : next), []);
+  const pending = changed && (validity.waiting || Boolean(key && JSON.stringify(applied) !== key));
+  return <div className="axis-report-studio axis-public-report">
+    <header className="axis-report-studio-header"><div><Link className="axis-inline-link" href="/dashboards"><ArrowLeft size={14} />Dashboards</Link><h1>{dashboard.title}</h1>{doc.description && <p>{doc.description}</p>}</div><div className="axis-actions"><button type="button" className="axis-button secondary" onClick={() => void navigator.clipboard.writeText(window.location.href).then(() => onMessage("Public dashboard URL copied.")).catch(() => onError("Copy the current address from your browser."))}>Copy public URL</button>{owned && <Link className="axis-button" href={"/dashboards/" + dashboard.key + "/edit"}>Edit dashboard</Link>}</div></header>
+    <div className="axis-report-toolbar"><button type="button" className="axis-button secondary" aria-pressed={filtersOpen} onClick={() => setFiltersOpen(value => !value)}><Filter size={15} />Filters</button><div className="axis-report-refresh"><button type="button" className="axis-icon-button" aria-label="Refresh report" disabled={status.loading} onClick={() => setRevision(value => value + 1)}><RefreshCw size={15} /></button><label htmlFor="viewer-refresh">Auto refresh</label><select id="viewer-refresh" value={refreshMs} onChange={event => setRefreshMs(Number(event.target.value))}><option value={0}>Off</option><option value={30000}>30 seconds</option><option value={60000}>1 minute</option><option value={300000}>5 minutes</option></select></div></div>
+    <div className="axis-report-status" role="status"><span className={pending || status.loading ? "is-updating" : ""}><i />{validity.error && changed ? "Filters not applied" : pending ? "Applying filters..." : status.loading ? "Updating report..." : status.fetchedAt ? "Updated " + new Date(status.fetchedAt).toLocaleTimeString() : "Verified source data"}</span><span>{doc.widgets.length} visuals{changed && " · Your filters apply to this view"}</span></div>
+    {error && <Notice tone="error">{error}</Notice>}{message && <Notice tone="success">{message}</Notice>}
+    <div className={"axis-report-workspace without-properties" + (!filtersOpen ? " without-filters" : "")}>
+      {filtersOpen && <aside className="axis-report-pane axis-report-filters" aria-label="Dashboard filters"><div className="axis-report-pane-heading"><Filter size={16} /><h2>Dashboard filters</h2></div><DashboardFilters query={draft} datasets={catalog.data?.datasets ?? []} onChange={query => { setDraft(query); setChanged(true); }} onValidity={receiveValidity} editable={false} /></aside>}
+      <DashboardReport document={doc} query={changed ? applied : doc.query} refreshMs={refreshMs} revision={revision} onStatus={receiveStatus} showHeading={false} />
+    </div>
+    <details className="axis-dashboard-definition"><summary>Dashboard details</summary><dl className="axis-details"><dt>Owner</dt><dd className="axis-mono">{dashboard.owner}</dd><dt>Definition expires</dt><dd>Arkiv block {dashboard.expiresAt}</dd><dt>Saved refresh interval</dt><dd>{doc.refreshMs ? "Every " + doc.refreshMs / 1000 + "s" : "Manual"}</dd></dl>{owned && <div className="axis-actions"><button className="axis-button secondary" disabled={busy} onClick={() => onManage("renew")}>Renew dashboard</button><button className="axis-button secondary" disabled={busy} onClick={() => onManage("delete")}>Delete definition</button></div>}</details>
+  </div>;
 }
-export function DashboardCatalog({ community = false }: { community?: boolean }) {
-  const resource = useApi<{ dashboards: SavedDocument[] }>("dashboards", 30000), wallet = useAxisWallet(), [mine, setMine] = React.useState(false), [search, setSearch] = React.useState("");
-  const dashboards = (resource.data?.dashboards ?? []).filter(item => (!mine || item.owner === wallet.address?.toLowerCase()) && `${item.title} ${item.document.description} ${item.owner}`.toLowerCase().includes(search.toLowerCase()));
-  return <><PageIntro title={community ? "Community Explorer" : "Dashboards"} description="Public dashboard definitions live in Arkiv and load independently of this browser."><Link href="/dashboards/new" className="axis-button">New dashboard</Link><Link href="/dashboards/prebuilt" className="axis-button secondary">Prebuilt USDC analytics</Link><RefreshButton loading={resource.loading} onClick={resource.refresh} /></PageIntro><Panel><div className="axis-form-grid"><Field label="Search dashboards"><input placeholder="Title, description or owner" value={search} onChange={event => setSearch(event.target.value)} /></Field><label className="axis-checkbox"><input type="checkbox" checked={mine} onChange={event => setMine(event.target.checked)} />Only my wallet&apos;s dashboards</label></div></Panel>{resource.error && <Notice tone="error">{resource.error}</Notice>}{resource.loading && !resource.data ? <Loading /> : dashboards.length ? <div className="axis-card-grid">{dashboards.map(item => <Link key={item.key} href={`/dashboards/${item.key}`} className="axis-dataset-card"><div className="axis-panel-heading"><b>{item.title}</b><span className="axis-badge">Public</span></div><p>{item.document.description || "An Arkiv-backed analytics dashboard"}</p><div>{item.document.widgets.length} independent query widgets</div><small>Owner {short(item.owner)} · {new Date(item.updatedAt).toLocaleDateString()}</small></Link>)}</div> : <Empty>No matching dashboards. Publish your first dashboard from a verified dataset.</Empty>}</>;
-}
-export function DashboardBuilder({ editing }: { editing?: SavedDocument }) {
-  const params = useSearchParams(), router = useRouter(), wallet = useAxisWallet();
-  const catalog = useApi<{ datasets: Dataset[] }>("datasets"), saved = useApi<{ queries: SavedQuery[] }>(wallet.address ? `queries?owner=${wallet.address}` : null);
-  const [doc, setDoc] = React.useState<DashboardDocument>(editing?.document ?? { version: 1, title: "", description: "", refreshMs: 0, widgets: [] });
-  const [linkedQuery] = React.useState(() => { try { return { filters: validateFilters(JSON.parse(params.get("filters") ?? "{}")), error: null as string | null }; } catch { return { filters: {}, error: "The linked query filters are invalid. Review the widget filters before adding it." }; } });
-  const [draft, setDraft] = React.useState<AxisWidget>({ id: "preview", title: "Transfer count", kind: "metric", metric: "transfers", grouping: "time", width: 1, query: { datasetKey: params.get("dataset") ?? "", filters: linkedQuery.filters } });
-  const [busy, setBusy] = React.useState(false), [error, setError] = React.useState<string | null>(linkedQuery.error), [message, setMessage] = React.useState<string | null>(null);
-  const [preview, setPreview] = React.useState<AxisWidget | null>(null);
-  const updateDraft = (patch: Partial<AxisWidget>) => { setDraft(value => ({ ...value, ...patch })); setPreview(null); };
-  const add = async () => {
-    setBusy(true); setError(null);
-    try { if (doc.widgets.length >= 12) throw new Error("A dashboard supports at most 12 widgets."); await api("query", { ...draft.query, mode: "analytics" }); setDoc(value => ({ ...value, widgets: [...value.widgets, { ...draft, id: crypto.randomUUID() }] })); setMessage("Widget added after verifying its query against Arkiv."); }
-    catch (caught) { setError(walletError(caught)); } finally { setBusy(false); }
-  };
-  const publish = async () => {
-    setBusy(true); setError(null); setMessage(null);
-    try {
-      validateDashboard(doc);
-      if (editing && editing.owner !== wallet.address?.toLowerCase()) throw new Error("Connect the dashboard owner to update this definition.");
-      const account = wallet.address ?? await wallet.connect();
-      for (const widget of doc.widgets) await api("query", { ...widget.query, mode: "analytics" });
-      const result = await publishDashboard(account, doc, editing?.key);
-      const readback = await api<{ dashboard: SavedDocument }>(`dashboards/${result.entityKey}`);
-      if (JSON.stringify(readback.dashboard.document) !== JSON.stringify(doc)) throw new Error("Published dashboard readback differs from the editor.");
-      localStorage.removeItem(DRAFT_KEY); router.push(`/dashboards/${result.entityKey}`);
-    } catch (caught) { setError(walletError(caught)); } finally { setBusy(false); }
-  };
-  return <><PageIntro title={editing ? "Edit dashboard" : "Dashboard Builder"} description="Compose independent query widgets, verify their results, then publish with your wallet." /><Panel title="Dashboard definition"><div className="axis-form-stack"><div className="axis-form-grid"><Field label="Dashboard title"><input value={doc.title} maxLength={80} onChange={event => setDoc({ ...doc, title: event.target.value })} /></Field><Field label="Automatic refresh"><select value={doc.refreshMs} onChange={event => setDoc({ ...doc, refreshMs: Number(event.target.value) })}>{[[0, "Manual"], [30000, "30 seconds"], [60000, "1 minute"], [300000, "5 minutes"]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field></div><Field label="Dashboard description"><textarea rows={2} value={doc.description} maxLength={2000} onChange={event => setDoc({ ...doc, description: event.target.value })} /></Field><div className="axis-actions"><button className="axis-button secondary" onClick={() => { localStorage.setItem(DRAFT_KEY, JSON.stringify(doc)); setMessage("Draft saved in this browser. Publish it to make it independently accessible."); }}>Save local draft</button><button className="axis-button secondary" onClick={() => { try { const raw = localStorage.getItem(DRAFT_KEY); if (!raw) throw new Error("No local draft exists."); setDoc(validateDashboard(JSON.parse(raw))); setMessage("Local draft restored."); } catch (caught) { setError(walletError(caught)); } }}>Restore draft</button></div></div></Panel><Panel title="Compose a widget"><div className="axis-form-stack"><DatasetSelect datasets={catalog.data?.datasets ?? []} value={draft.query.datasetKey} onChange={datasetKey => updateDraft({ query: { ...draft.query, datasetKey } })} />{!!saved.data?.queries.length && <Field label="Use a saved query"><select value="" onChange={event => { const selected = saved.data?.queries.find(item => item.key === event.target.value); if (selected) updateDraft({ query: selected.query }); }}><option value="">Choose a wallet-owned saved query</option>{saved.data.queries.map(item => <option value={item.key} key={item.key}>{item.title}</option>)}</select></Field>}<div className="axis-form-grid"><Field label="Widget title"><input value={draft.title} maxLength={100} onChange={event => updateDraft({ title: event.target.value })} /></Field><Field label="Visualization"><select value={draft.kind} onChange={event => updateDraft({ kind: event.target.value as AxisWidget["kind"], metric: "transfers" })}><option value="metric">Metric</option><option value="line">Line chart</option><option value="bar">Bar chart</option><option value="table">Transfer table</option></select></Field><Field label="Measure"><select value={draft.metric} onChange={event => updateDraft({ metric: event.target.value as AxisWidget["metric"] })}><option value="transfers">Transfer count</option><option value="amount">Gross transferred USDC</option>{draft.kind === "metric" && <><option value="uniqueSenders">Unique senders</option><option value="uniqueRecipients">Unique recipients</option><option value="uniqueWallets">Unique wallets (union)</option><option value="averageAmount">Mean transfer size</option><option value="medianAmount">Median transfer size</option><option value="p90Amount">P90 transfer size</option><option value="largestAmount">Largest transfer</option></>}</select></Field><Field label="Grouping"><select value={draft.grouping} onChange={event => updateDraft({ grouping: event.target.value as AxisWidget["grouping"] })}><option value="time">UTC day</option><option value="block">Source block</option><option value="distribution">Transfer-size distribution</option><option value="sender">Top senders</option><option value="recipient">Top recipients</option></select></Field><Field label="Widget width"><select value={draft.width} onChange={event => updateDraft({ width: Number(event.target.value) as 1 | 2 })}><option value={1}>Half width</option><option value={2}>Full width</option></select></Field></div><details><summary>Query filters for this widget</summary><FilterFields filters={draft.query.filters} onChange={filters => updateDraft({ query: { ...draft.query, filters } })} /></details><div className="axis-actions"><button className="axis-button secondary" disabled={!draft.query.datasetKey} onClick={() => setPreview({ ...draft })}>Preview query</button><button className="axis-button" disabled={!draft.query.datasetKey || busy} onClick={() => void add()}>{busy ? "Verifying…" : "Verify & add widget"}</button></div>{preview && <Widget key={JSON.stringify(preview)} widget={preview} />}</div></Panel>{error && <Notice tone="error">{error}</Notice>}{message && <Notice tone="success">{message}</Notice>}{catalog.error && <Notice tone="error">{catalog.error}</Notice>}<Panel title={`Dashboard layout · ${doc.widgets.length} widgets`}><div className="axis-widget-grid">{doc.widgets.map((widget, index) => <div key={widget.id} className={`width-${widget.width}`}><div className="axis-actions axis-widget-controls"><button className="axis-link-button" onClick={() => { setDraft(widget); setDoc({ ...doc, widgets: doc.widgets.filter(item => item.id !== widget.id) }); }}>Edit</button><button className="axis-link-button" disabled={!index} onClick={() => { const widgets = [...doc.widgets]; [widgets[index - 1], widgets[index]] = [widgets[index], widgets[index - 1]]; setDoc({ ...doc, widgets }); }}>Move up</button><button className="axis-link-button" onClick={() => setDoc({ ...doc, widgets: doc.widgets.filter(item => item.id !== widget.id) })}>Remove</button></div><Widget widget={widget} /></div>)}</div>{!doc.widgets.length && <Empty>Add verified widgets to build your layout.</Empty>}<button className="axis-button" disabled={busy || !doc.widgets.length || !doc.title.trim()} onClick={() => void publish()}>{busy ? "Verifying and publishing…" : editing ? "Update dashboard on Arkiv" : "Publish dashboard to Arkiv"}</button></Panel></>;
-}
+
 export function DashboardView({ entityKey, edit = false }: { entityKey: string; edit?: boolean }) {
-  const resource = useApi<{ dashboard: SavedDocument }>(`dashboards/${entityKey}`), wallet = useAxisWallet(), router = useRouter();
-  const [revision, setRevision] = React.useState(0), [busy, setBusy] = React.useState(false), [message, setMessage] = React.useState<string | null>(null), [error, setError] = React.useState<string | null>(null);
+  const resource = useApi<{ dashboard: SavedDocument }>("dashboards/" + entityKey), wallet = useAxisWallet(), router = useRouter();
+  const [busy, setBusy] = React.useState(false), [error, setError] = React.useState<string | null>(null), [message, setMessage] = React.useState<string | null>(null);
   const dashboard = resource.data?.dashboard;
-  const [windowBlocks, setWindowBlocks] = React.useState("60");
-  const viewed = dashboard?.document.preset ? { ...dashboard, document: { ...dashboard.document, widgets: dashboard.document.widgets.map(widget => ({ ...widget, query: { ...widget.query, filters: { ...widget.query.filters, lookbackBlocks: windowBlocks } } })) } } : dashboard;
   const action = async (kind: "renew" | "delete") => {
     if (!wallet.address) return;
     if (kind === "delete" && !window.confirm("Delete this dashboard definition from current Arkiv queries? Its underlying datasets remain available.")) return;
     setBusy(true); setError(null);
-    try { if (kind === "renew") { await renewEntity(wallet.address, entityKey); setMessage("Dashboard renewed for 30 days from now."); resource.refresh(); } else { await removeEntity(wallet.address, entityKey); router.push("/dashboards"); } }
-    catch (caught) { setError(walletError(caught)); } finally { setBusy(false); }
+    try {
+      if (kind === "renew") { await renewEntity(wallet.address, entityKey); setMessage("Dashboard renewed for 30 days from now."); resource.refresh(); }
+      else { await removeEntity(wallet.address, entityKey); router.push("/dashboards"); }
+    } catch (caught) { setError(walletError(caught)); } finally { setBusy(false); }
   };
-  if (edit && dashboard) return dashboard.owner === wallet.address?.toLowerCase() ? <DashboardBuilder editing={dashboard} /> : <Notice>Connect the dashboard owner wallet to edit this definition.</Notice>;
-  return <><PageIntro title={dashboard?.title ?? "Public dashboard"} description={dashboard?.document.description || "Loading a wallet-owned dashboard directly from Arkiv."}><RefreshButton loading={resource.loading} onClick={() => { resource.refresh(); setRevision(value => value + 1); }} /><button className="axis-button secondary" onClick={() => void navigator.clipboard.writeText(window.location.href).then(() => setMessage("Public dashboard URL copied.")).catch(() => setError("Copy the current address from your browser."))}>Copy public URL</button></PageIntro>{resource.error && <Notice tone="error">{resource.error}</Notice>}{error && <Notice tone="error">{error}</Notice>}{message && <Notice tone="success">{message}</Notice>}{resource.loading && !dashboard && <Loading />}{dashboard && <><Panel><p>Owner <b>{dashboard.owner}</b> · definition expires at Arkiv block <b>{dashboard.expiresAt}</b>. {dashboard.document.refreshMs ? `Queries refresh every ${dashboard.document.refreshMs / 1000} seconds.` : "Manual refresh."}</p>{dashboard.owner === wallet.address?.toLowerCase() && <div className="axis-actions"><Link href={`/dashboards/${entityKey}/edit`} className="axis-button secondary">Edit dashboard</Link><button className="axis-button secondary" disabled={busy} onClick={() => void action("renew")}>Renew dashboard</button><button className="axis-button secondary" disabled={busy} onClick={() => void action("delete")}>Delete definition</button></div>}</Panel>{dashboard.document.preset && viewed && <><Panel title="Dashboard window"><Field label="Rolling source-block window"><select value={windowBlocks} onChange={event => setWindowBlocks(event.target.value)}>{[1, 10, 30, 60, 120].map(blocks => <option key={blocks} value={String(blocks)}>Latest {blocks} verified blocks</option>)}</select></Field><p>The window applies to every widget and advances with verified imports.</p></Panel><LiveDashboardStatus dashboard={viewed} /></>}<div className="axis-widget-grid">{(viewed ?? dashboard).document.widgets.map(widget => <Widget key={`${widget.id}-${revision}`} widget={widget} refreshMs={dashboard.document.refreshMs} />)}</div></>}</>;
+  if (edit && dashboard) return dashboard.owner === wallet.address?.toLowerCase()
+    ? <DashboardBuilder editing={dashboard} />
+    : <Notice>Connect the dashboard owner wallet to edit this definition.</Notice>;
+  if (!dashboard) return <><PageIntro title="Public dashboard" />{resource.error ? <Notice tone="error">{resource.error}<button className="axis-link-button" onClick={resource.refresh}>Try again</button></Notice> : <Loading />}</>;
+  return <PublicReport dashboard={dashboard} owned={dashboard.owner === wallet.address?.toLowerCase()} busy={busy} onManage={kind => void action(kind)} error={error} message={message} onError={setError} onMessage={setMessage} />;
 }

@@ -1,0 +1,184 @@
+import { expect, test, type Page } from "@playwright/test";
+import { aggregateTransfers } from "../src/lib/axis/core";
+import { USDC, type DashboardDocument, type Transfer } from "../src/lib/axis/model";
+
+const keyA = `0x${"1".repeat(64)}`, keyB = `0x${"2".repeat(64)}`, dashboardKey = `0x${"7".repeat(64)}`;
+const owner = `0x${"a".repeat(40)}`, other = `0x${"b".repeat(40)}`;
+const datasets = [keyA, keyB].map((key, index) => ({ key, owner, creator: owner, writer: owner, expiresAt: "99999999", name: index ? "Settlement records" : "Treasury transfers", description: "", chainId: 137, contract: USDC, startBlock: "10", endBlock: "0", continuous: true, enabled: true, createdAt: "2026-11-07T00:00:00Z" }));
+const rows: Transfer[] = Array.from({ length: 6 }, (_, index) => ({ datasetKey: index < 3 ? keyA : keyB, entityKey: "0x" + (index + 1).toString(16).padStart(64, "0"), sourceId: String(index), chainId: 137, contract: USDC, blockNumber: String(index + 10), blockHash: keyA, timestamp: String(1794000000 + index * 60), txHash: keyA, txIndex: 0, logIndex: index, sender: index < 3 ? owner : other, recipient: other, amountRaw: String((index % 3 + 1) * 1000000), amount: String(index % 3 + 1), decimals: 6, contentHash: keyA }));
+const fieldsA = [{ name: "sender", type: "addr", indexed: true }, { name: "amountRaw", type: "u256", indexed: true }, { name: "sourceTime", type: "u64", indexed: true }];
+const fieldsB = [{ name: "recipient", type: "addr", indexed: true }, { name: "txHash", type: "key", indexed: true }];
+const coverage = { complete: true, fromBlock: "10", throughBlock: "15", requestedThrough: "15", expectedRows: 6, actualRows: 6, gaps: [], manifests: [] };
+type Request = { datasetKey?: string; queries?: { datasetKey: string; filters: Record<string, unknown> }[]; filters: Record<string, unknown>; mode: string; offset?: number; limit?: number };
+async function setup(page: Page) {
+  const state = { requests: [] as Request[], document: null as DashboardDocument | null, fail: false, failSchema: false, holdMinimum: "", release: () => {} };
+  await page.route("**/api/axis/**", async route => {
+    const path = new URL(route.request().url()).pathname.replace("/api/axis/", "");
+    if (path === "datasets") return route.fulfill({ json: { datasets } });
+    if (path.startsWith("schema/")) return route.fulfill(state.failSchema ? { status: 503, json: { error: "Schema is unavailable" } } : { json: { datasetKey: path.slice(7), observed: true, fields: path.endsWith(keyA) ? fieldsA : fieldsB } });
+    if (path === "query") {
+      const input = route.request().postDataJSON() as Request; state.requests.push(input);
+      const sources = input.queries ?? [{ datasetKey: input.datasetKey!, filters: input.filters }];
+      const minimum = (sources[0].filters.conditions as { field: string; value: string }[] | undefined)?.find(condition => condition.field === "amountRaw")?.value;
+      if (minimum && minimum === state.holdMinimum) await new Promise<void>(resolve => { state.release = resolve; });
+      if (state.fail) return route.fulfill({ status: 503, json: { error: "Verified data is unavailable" } });
+      const selected = rows.filter(row => sources.some(source => row.datasetKey === source.datasetKey && (!source.filters.sender || row.sender === source.filters.sender) && (!source.filters.recipient || row.recipient === source.filters.recipient) && ((source.filters.conditions as { field: string; operator: string; value: string }[] | undefined) ?? []).every(condition => condition.field !== "amountRaw" || (condition.operator === ">=" ? BigInt(row.amountRaw) >= BigInt(condition.value) : BigInt(row.amountRaw) <= BigInt(condition.value)))));
+      return route.fulfill({ json: { dataset: datasets.find(dataset => dataset.key === sources[0].datasetKey), ...(input.queries ? { sources: sources.map(source => ({ ...source, dataset: datasets.find(dataset => dataset.key === source.datasetKey), coverage })), recordDatasets: datasets.map(({ key, name }) => ({ key, name })) } : {}), coverage, scope: { fromBlock: "10", toBlock: "15", fromTime: null, toTime: null }, entities: selected.slice(input.offset ?? 0, (input.offset ?? 0) + (input.limit ?? 25)), total: String(selected.length), analytics: aggregateTransfers(selected), scannedRows: selected.length, executedQuery: "Verified native Arkiv fixture", blockNumber: "123", fetchedAt: new Date().toISOString() } });
+    }
+    if (path === "dashboards/" + dashboardKey) return route.fulfill({ json: { dashboard: { key: dashboardKey, owner, creator: owner, expiresAt: "99999999", title: state.document?.title, document: state.document, updatedAt: "2026-11-07T00:00:00Z" } } });
+    return route.fulfill({ json: {} });
+  });
+  return state;
+}
+const volume = (page: Page) => page.getByRole("region", { name: "Transferred USDC", exact: true }).locator(".axis-report-metric strong");
+const initialUrl = () => "/dashboards/new?" + new URLSearchParams({ dataset: keyA, filters: JSON.stringify({ sender: owner }), queries: JSON.stringify([{ datasetKey: keyA, filters: { sender: owner } }, { datasetKey: keyB, filters: { recipient: other } }]) });
+
+test("query handoff opens a structured report with live source filters and one shared analytics request", async ({ page }) => {
+  const state = await setup(page), errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.setViewportSize({ width: 1920, height: 1100 });
+  await page.goto("/query?dataset=" + keyA);
+  await page.getByRole("button", { name: "Execute query", exact: true }).click();
+  await expect(page.getByRole("table", { name: "Verified transfers" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Visual analytics", exact: true })).toHaveCount(0);
+  expect(state.requests.every(request => request.mode === "page")).toBe(true);
+  await page.getByRole("link", { name: "Build dashboard" }).click();
+  await expect(page).toHaveURL(/\/dashboards\/new/);
+  await expect(page.locator(".axis-report-grid > .axis-report-visual")).toHaveCount(8);
+  await expect(volume(page)).toHaveText("6");
+  expect(state.requests.filter(request => request.mode === "analytics")).toHaveLength(1);
+  await page.goto(initialUrl());
+  await expect(volume(page)).toHaveText("12");
+  await expect(page.getByLabel("Sender address", { exact: true })).toHaveValue(owner);
+  await expect(page.getByLabel("Recipient address", { exact: true })).toHaveValue(other);
+  await page.getByLabel("Dashboard title", { exact: true }).fill("Treasury intelligence");
+  await page.getByLabel("Short explanation", { exact: true }).fill("USDC activity and wallet concentration across treasury and settlement records.");
+  await expect(page.getByRole("heading", { name: "Treasury intelligence", exact: true })).toBeVisible();
+  const minimum = page.getByLabel("Minimum transfer amount (base units)", { exact: true });
+  state.holdMinimum = "2000000";
+  await minimum.fill("2000000");
+  await expect.poll(() => state.requests.filter(request => request.mode === "analytics" && JSON.stringify(request).includes('"2000000"')).length).toBe(1);
+  await minimum.fill("3000000");
+  await expect(volume(page)).toHaveText("9");
+  const oldResponse = page.waitForResponse(response => response.url().endsWith("/api/axis/query") && JSON.stringify(response.request().postDataJSON()).includes('"2000000"'));
+  state.release(); await oldResponse;
+  await expect(volume(page)).toHaveText("9");
+  const beforeInvalid = state.requests.length;
+  await minimum.fill("invalid");
+  await expect(page.getByText("Filters not applied", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Publish dashboard to Arkiv", exact: true })).toBeDisabled();
+  expect(state.requests).toHaveLength(beforeInvalid);
+  await expect(volume(page)).toHaveText("9");
+  await minimum.fill("3000000");
+  await expect(page.getByRole("button", { name: "Save local draft", exact: true })).toBeEnabled();
+  const beforeStyle = state.requests.length;
+  await page.getByLabel("Visual title", { exact: true }).fill("USDC movement");
+  await page.getByLabel("Visual explanation", { exact: true }).fill("Verified volume, split by transfer-size band.");
+  await page.getByLabel("Visualization", { exact: true }).selectOption("share-area");
+  await expect(page.locator('.axis-insight-chart > [data-chart-kind="share-area"]')).toBeVisible();
+  await expect(page.getByRole("region", { name: "USDC movement", exact: true }).getByText("Verified volume, split by transfer-size band.", { exact: true })).toBeVisible();
+  expect(state.requests).toHaveLength(beforeStyle);
+  await page.getByRole("button", { name: "Duplicate USDC movement", exact: true }).click();
+  await expect(page.locator(".axis-report-grid > .axis-report-visual")).toHaveCount(9);
+  await page.getByRole("button", { name: "Remove USDC movement copy", exact: true }).click();
+  await expect(page.locator(".axis-report-grid > .axis-report-visual")).toHaveCount(8);
+  await page.getByRole("button", { name: "Move USDC movement up", exact: true }).click();
+  await page.getByRole("button", { name: "Save local draft", exact: true }).click();
+  const savedDocument = await page.evaluate(() => JSON.parse(localStorage.getItem("axis:dashboard-draft:v1")!)) as DashboardDocument;
+  expect(savedDocument.widgets[3].title).toBe("USDC movement");
+  expect(savedDocument.widgets[3].description).toBe("Verified volume, split by transfer-size band.");
+  expect(savedDocument.query?.queries).toHaveLength(2);
+  expect(savedDocument.widgets.every(widget => JSON.stringify(widget.query) === JSON.stringify(savedDocument.query))).toBe(true);
+  await page.getByRole("button", { name: "Move USDC movement down", exact: true }).click();
+  await page.getByRole("button", { name: "Edit USDC movement", exact: true }).click();
+  for (const width of [1920, 1440, 1024, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 1100 });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), { message: "Overflow at " + width }).toBe(true);
+    if (width === 1920 || width === 390) { await page.evaluate(() => window.scrollTo(0, 0)); await page.screenshot({ path: `.axis/report-builder/report-${width}.png`, fullPage: true }); }
+  }
+  await page.setViewportSize({ width: 1920, height: 1100 });
+  await page.getByRole("button", { name: "Preview report", exact: true }).click();
+  await expect(page.getByRole("complementary", { name: "Visual properties", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Remove USDC movement", exact: true })).toHaveCount(0);
+  await expect(volume(page)).toHaveText("9");
+  expect(errors).toEqual([]);
+});
+
+test("local drafts restore report definitions and public filters update every visual without changing the saved report", async ({ page }) => {
+  const state = await setup(page);
+  await page.goto(initialUrl());
+  await expect(volume(page)).toHaveText("12");
+  await page.getByLabel("Dashboard title", { exact: true }).fill("Settlement overview");
+  await page.getByRole("button", { name: "Save local draft", exact: true }).click();
+  state.document = await page.evaluate(() => JSON.parse(localStorage.getItem("axis:dashboard-draft:v1")!));
+  await page.reload();
+  await page.getByRole("button", { name: "Restore draft", exact: true }).click();
+  await expect(page.getByLabel("Dashboard title", { exact: true })).toHaveValue("Settlement overview");
+  await expect(volume(page)).toHaveText("12");
+  await page.goto("/dashboards/" + dashboardKey);
+  await expect(page.getByRole("heading", { name: "Settlement overview", exact: true })).toBeVisible();
+  await expect(volume(page)).toHaveText("12");
+  await page.getByLabel("Minimum transfer amount (base units)", { exact: true }).fill("3000000");
+  await expect(volume(page)).toHaveText("9");
+  expect(state.document?.query?.queries?.[0].filters.conditions).toBeUndefined();
+  await page.getByRole("button", { name: "Reset filters", exact: true }).click();
+  await expect(volume(page)).toHaveText("12");
+  state.fail = true;
+  await page.getByRole("button", { name: "Refresh report", exact: true }).click();
+  await expect(page.locator(".axis-report-canvas [role=alert]")).toContainText("Verified data is unavailable");
+  await expect(volume(page)).toHaveText("12");
+  state.fail = false;
+  await page.getByRole("button", { name: "Retry data", exact: true }).click();
+  await expect(volume(page)).toHaveText("12");
+});
+
+test("automatic refresh, shared record tables and drag ordering work without redundant chart reads", async ({ page }) => {
+  await page.clock.install();
+  const state = await setup(page);
+  await page.setViewportSize({ width: 1920, height: 1100 });
+  await page.goto(initialUrl());
+  await expect(volume(page)).toHaveText("12");
+  const initial = state.requests.filter(request => request.mode === "analytics").length;
+  await page.clock.fastForward(30001);
+  await expect.poll(() => state.requests.filter(request => request.mode === "analytics").length).toBe(initial + 1);
+  await expect(volume(page)).toHaveText("12");
+  await page.getByLabel("Auto refresh", { exact: true }).selectOption("0");
+  await expect(volume(page)).toHaveText("12");
+  const stopped = state.requests.length;
+  await page.clock.fastForward(60001);
+  expect(state.requests).toHaveLength(stopped);
+  await page.locator(".axis-report-add > summary").click();
+  await page.getByRole("button", { name: "Transfer records", exact: true }).click();
+  const table = page.getByRole("table", { name: "Verified transfers", exact: true });
+  await expect(table.locator("tbody tr")).toHaveCount(6);
+  expect(state.requests.filter(request => request.mode === "analytics")).toHaveLength(initial + 1);
+  await page.clock.resume();
+  const grip = page.getByRole("button", { name: "Drag Transfer records", exact: true });
+  await grip.scrollIntoViewIfNeeded();
+  const gripBox = (await grip.boundingBox())!;
+  await page.mouse.move(gripBox.x + gripBox.width / 2, gripBox.y + gripBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(gripBox.x + gripBox.width / 2 + 15, gripBox.y + gripBox.height / 2, { steps: 5 });
+  const target = page.getByRole("region", { name: "Transfer activity", exact: true }).locator(".axis-report-visual-header");
+  await target.scrollIntoViewIfNeeded();
+  const targetBox = (await target.boundingBox())!;
+  await page.mouse.move(targetBox.x + 30, targetBox.y + 20, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.locator(".axis-report-grid > .axis-report-visual").nth(4)).toHaveAttribute("aria-label", "Transfer records");
+  await expect(volume(page)).toHaveText("12");
+});
+
+test("schema failures block report reads and can be retried without showing fabricated metrics", async ({ page }) => {
+  const state = await setup(page); state.failSchema = true;
+  await page.goto(initialUrl());
+  await expect(page.getByRole("button", { name: "Retry schema", exact: true })).toHaveCount(2);
+  await expect(page.getByText("Filters not applied", { exact: true })).toBeVisible();
+  await expect(volume(page)).toHaveCount(0);
+  expect(state.requests).toHaveLength(0);
+  state.failSchema = false;
+  await page.getByRole("button", { name: "Retry schema", exact: true }).first().click();
+  await expect(page.getByRole("button", { name: "Retry schema", exact: true })).toHaveCount(1);
+  await page.getByRole("button", { name: "Retry schema", exact: true }).click();
+  await expect(volume(page)).toHaveText("12");
+  expect(state.requests.filter(request => request.mode === "analytics")).toHaveLength(1);
+});
