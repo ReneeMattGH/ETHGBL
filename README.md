@@ -1,7 +1,7 @@
 > [!IMPORTANT]
 > **ETHGlobal Mumbai 2026 — tracks we are applying for**
 >
-> - **[Mirror something Ethereum depends on](arkiv/how-you-use-arkiv.md)** — our main track: queryable records, wallet-owned definitions and verified analytics on Arkiv.
+> - **[Mirror something Ethereum depends on](arkiv/how-you-use-arkiv.md)** — our main track: Pick public data that Ethereum apps and developers rely on, and mirror it into Arkiv
 > - **[Arkiv + Swarm bonus (from scratch)](arkiv/swarm.md)** — public query archives on Swarm, referenced and verified through Arkiv entities.
 
 <p align="center">
@@ -46,7 +46,7 @@
 
 ## Why AXIS
 
-AXIS connects a report to its source query, verified block range and publishing wallet. Readers can see which records were included, which source blocks were checked and whether the underlying records are still available. That context stays attached to the analysis, from the first query to the shared report.
+AXIS is a decentralized alternative to Dune Analytics, transforming real blockchain data into publicly queryable Arkiv datasets, enabling users to explore onchain activity, create custom analytics, and publish wallet-owned dashboards.
 
 The first audience is **Polygon treasury operators, protocol contributors and analysts** who need to investigate activity and share a recurring view. For example: find transfers above 100 USDC, inspect the sending wallets, compare concentration, and publish a report a teammate can open without connecting a wallet.
 
