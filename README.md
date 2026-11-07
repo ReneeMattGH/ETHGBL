@@ -1,3 +1,9 @@
+> [!IMPORTANT]
+> **ETHGlobal Mumbai 2026 — tracks we are applying for**
+>
+> - **[Build on Arkiv (from scratch)](arkiv/how-you-use-arkiv.md)** — our main track: queryable records, wallet-owned definitions and verified analytics on Arkiv.
+> - **[Arkiv + Swarm bonus (from scratch)](arkiv/swarm.md)** — public query archives on Swarm, referenced and verified through Arkiv entities.
+
 <p align="center">
   <img src="docs/images/axis-logo.png" alt="AXIS" width="280">
 </p>
@@ -25,9 +31,11 @@
 </p>
 
 <p align="center">
+  <a href="#why-axis">Why AXIS</a> ·
   <a href="#what-you-can-do">Features</a> ·
   <a href="#in-action">Screenshots</a> ·
   <a href="#architecture">Architecture</a> ·
+  <a href="#technical-design">Technical design</a> ·
   <a href="#run-locally">Run locally</a> ·
   <a href="#for-arkiv-judges">Arkiv submission</a>
 </p>
@@ -35,6 +43,22 @@
 <a href="https://axis-platform-e7ac45525b.vercel.app">
   <img src="docs/images/axis-landing.jpg" alt="AXIS landing page with its Arkiv analytics workspace introduction" width="100%">
 </a>
+
+## Why AXIS
+
+AXIS connects a report to its source query, verified block range and publishing wallet. Readers can see which records were included, which source blocks were checked and whether the underlying records are still available. That context stays attached to the analysis, from the first query to the shared report.
+
+The first audience is **Polygon treasury operators, protocol contributors and analysts** who need to investigate activity and share a recurring view. For example: find transfers above 100 USDC, inspect the sending wallets, compare concentration, and publish a report a teammate can open without connecting a wallet.
+
+| What the user needs | What AXIS provides | Why it matters |
+| --- | --- | --- |
+| A quicker path from a question to records | Manual indexed filters or English-to-filter planning, followed by the actual result table | Users can inspect the returned records before turning them into a visual. |
+| A report they control | Wallet-owned dataset and dashboard definitions in Arkiv | The report definition can be read independently of our interface; updates require its owner's signature. |
+| Numbers with a declared scope | Verified block bounds, record counts, publisher identity and query provenance | A chart does not silently imply complete chain history or hide missing source records. |
+| A shareable working view | A separate public viewer with per-visitor filters and live refresh | Teammates can explore a published report without changing its saved definition. |
+| A captured answer that will not turn into tomorrow's query | Swarm archives containing exact CSV/JSON exports, an HTML report and a checksummed manifest | A shared archive preserves the captured result instead of substituting a fresh live read. |
+
+Arkiv supplies the shared, queryable entities and wallet ownership. Swarm supplies the larger report files. The web application connects those pieces into one workflow: **explore → query → inspect → build → publish → archive**. [Audience and next steps](arkiv/reach.md).
 
 ## What you can do
 
@@ -111,6 +135,65 @@ AXIS takes a question about onchain activity and turns it into a report you can 
 The API and worker keep operational state on persistent disk. User signing keys stay in their wallets; the ingestion key stays with the worker. Entity expiry, source-provider trust and Swarm retention remain separate concerns.
 
 [Architecture and trust boundaries](docs/architecture.md) · [Editable Mermaid source](docs/architecture.mmd) · [Deployment details](docs/deployment.md)
+
+## Technical design
+
+### A typed data model with separate owners
+
+AXIS uses `@arkiv-network/sdk` to write and query entities on **Arkiv Rabdi (chain 7794095)**. Its imported Polygon records describe **chain 137**. Queryable fields live in typed, indexed columns; larger definitions and lossless source payloads live in entity documents.
+
+| Entity | Role in the application | Ownership and update model |
+| --- | --- | --- |
+| `axis.transfer.v1` | Exact USDC transfers, filtered by dataset, block, wallet, timestamp and raw amount | Ingestion-wallet owned; attributes are created readonly. |
+| `axis.coverage.v1` | Verified source intervals, expected row counts and content/readback evidence | Ingestion-wallet owned and readonly; analytics check the available rows against it. |
+| `axis.dataset.v1` | A source definition or saved query scope with frozen bounds and filters | User-wallet owned; saving a scope reuses the underlying records rather than copying a private table. |
+| `axis.dashboard.v1` | Queries, visual configuration, titles, layout and refresh interval | User-wallet owned; the public viewer reads the same published document. |
+| `axis.bulk.import.v1` / `axis.bulk.record.v1` | Committed source prefixes and scoped protocol/reference records | Import manifests advance after verified readback; published record attributes are readonly. |
+| `axis.snapshot.v1` | Swarm collection reference, manifest checksum and captured source metadata | Publisher-wallet owned; readers verify the referenced files before displaying archived rows. |
+
+Owning a dashboard or dataset definition does not grant permission to rewrite the imported records. Definitions and analytical records initially request 30-day lifetimes; job-status entities use seven days. Renewal is explicit, and a definition can outlive its sources. [Complete schemas, indexed fields and retention](arkiv/schema.md).
+
+### Native predicates, with verified source boundaries
+
+The server loads the selected definition, validates its trusted writer and coverage, and compiles a native Arkiv predicate. Address, time and amount controls follow the dataset's observed field schema. When several sources are selected, each keeps its own bounds and filters inside a parenthesized OR branch.
+
+For example, **strictly above 100 USDC** becomes `amountRaw >= u256(100000001)` because USDC uses six decimal places. A compiled predicate over a previously checked source interval looks like this:
+
+```sql
+arkiv.schema = str('axis.transfer.v1')
+AND $owner = addr(0xe7ac45525bd9fec84902371aaa65cf53c7d89909)
+AND datasetKey = key(0x0c190ee3773030e0ada7b23d11717ee99a86adc4e7c4478c23e87149a653b89b)
+AND blockNumber >= u64(96864289)
+AND blockNumber <= u64(96864708)
+AND amountRaw >= u256(100000001)
+ORDER BY blockNumber:u64 DESC
+```
+
+The bounds above illustrate a recorded verified scope, not an assertion that it is the latest import. English mode produces a structured candidate plan through OpenRouter; local validation checks fields, types, source identities and constraints before compiling the same query path. Ambiguous or unsupported requests require clarification. The model does not supply records or calculate chart totals. [Query compiler](src/lib/axis/store.ts) · [English-plan validation](src/lib/axis/english-query.ts).
+
+### Exact values and verified publication
+
+Transfer amounts are retained as integer base-unit strings and calculated with `BigInt`. The displayed token amount is formatted from those values; chart coordinates may be approximate, while tooltips, data tables and exports preserve exact values. Complete analytics use the matching verified scope, rather than presenting the current 25-row table page as a whole-dataset total.
+
+The worker extracts a finalized source interval, normalizes records, publishes them in batches and reads them back. Coverage advances only after the intended interval passes verification. Bulk readers additionally constrain the trusted owner, import key, committed ordinal prefix and source block range. Restart recovery reconciles existing identities and pending nonces before retrying writes. Missing rows, coverage gaps and failed readback stop the normal analytical result. [Ingestion implementation](src/lib/axis/ingestor.ts) · [Bulk publication contract](docs/bulk-publication.md).
+
+### Fresh reads, fast revisits
+
+| Layer | Implementation |
+| --- | --- |
+| RPC requests | Reused SDK reader, identical in-flight read sharing and at most eight concurrent node reads per server process |
+| Query payloads | Count-only verification, minimal transfer projections and schema probes without full record payloads |
+| Large result scans | Four disjoint key ranges, cursor pagination within each, ordered results and a shared 20,000-row cap |
+| Browser navigation | Bounded memory/session caching; older views refresh in the background, while explicit Execute/Refresh actions fetch fresh data |
+| Failure handling | A failed scan rejects the complete analytics result; a failed background refresh keeps the last successful visual with an error notice |
+
+On one **7,380-transfer live scope**, local analytics improved from **51.4 seconds to 20.9 seconds**, and a separate sequential scan matched every aggregate. This is an observed measurement, not a latency promise for every dataset. Multi-page reads still use the latest block per request; final count checks do not make them a block-pinned snapshot. [Benchmark command and implementation](scripts/axis-read-benchmark.ts) · [Performance and cache details](docs/architecture.md#query-performance).
+
+### A public reader and an independently checked archive
+
+The workspace frontend runs on Vercel and proxies to a persistent AWS API. The ingestion worker and durable operational state run on that server. The separate public-report deployment has read-only endpoints restricted to source datasets referenced by the selected report. User signing keys stay in their wallets, and the worker signing key is not supplied to the website.
+
+Archiving takes a full verified query export and builds `results.json`, `results.csv`, `index.html` and `manifest.json`. After upload, the server independently downloads and checks the remote files. The Arkiv snapshot entity holds `swarmReference` and `manifestSha256`; later archive reads check ownership, manifest integrity, file hashes, sizes and captured scope. Only public archives are supported: encrypted references containing decryption keys are rejected. [Archive implementation and real proof](arkiv/swarm.md).
 
 ## Run locally
 
@@ -215,17 +298,6 @@ npm.cmd run build -- --webpack
 ```
 
 Unit and controlled browser tests are separate from live-provider evidence. The production command above uses the webpack build path used for local release validation; development uses Turbopack. [Validation and live checks](docs/getting-started.md#validate-and-build).
-
-<details>
-<summary><strong>Query performance and caching</strong></summary>
-
-On one live scope of 7,380 transfers, local analytics improved from **51.4 seconds to 20.9 seconds**, with the same aggregates as a fresh sequential scan. This is a measured scope, not a universal latency promise. The server uses smaller projections, count-only verification, shared simultaneous reads and four disjoint scan ranges.
-
-Cached dataset and chart views render immediately on revisits within the current tab. Older copies refresh in the background, and explicit Execute/Refresh actions make fresh reads. Copies older than five minutes are discarded on reuse. Missing coverage and refresh failures are surfaced to the reader.
-
-[Performance implementation, limits and benchmark](docs/architecture.md#query-performance) · [Browser caching](docs/architecture.md#browser-caching)
-
-</details>
 
 ## Guides
 
