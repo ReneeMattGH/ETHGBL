@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "entityKey": "0x1a8d55399f8eedc9377a3e26ba34abc116d20b6eeb7599bb996a086fbcbc0109",
+  "txHash": "0xe3aebb9fb0579dbb5b6644c29e9337d88ec06ae56a8f837a8019f35b174a20cf",
+  "expiresAt": "1608467",
+  "document": {
+    "version": 1,
+    "title": "Polygon USDC verified snapshot",
+    "description": "Public archive of the verified Polygon USDC result scope, uploaded through gateway-provided postage. Actual postage batch and retention are undisclosed.",
+    "publisher": "0xe7ac45525bd9fec84902371aaa65cf53c7d89909",
+    "postageBatchId": null,
+    "batchBuyerAddress": null,
+    "batchDonor": null,
+    "uploadService": "https://api.gateway.ethswarm.org",
+    "createdAt": "2026-11-07T00:09:56.436Z",
+    "rowCount": 1007,
+    "chainId": 137,
+    "fromBlock": "96864289",
+    "throughBlock": "96864328",
+    "sourceDatasetKeys": [
+      "0xded6cad06485e410f4090ebeeeaf74eba353ee33de96d38ba6c2d922777ea87a"
+    ],
+    "postageSource": "gateway-provided",
+    "postageSelector": "0000000000000000000000000000000000000000000000000000000000000000",
+    "swarmReference": "7523bbbd9b117c13bafc97ad025171e7b01a65f592b057f207eba86edaaa6b48",
+    "manifestSha256": "15f1d328f2d3fa459dd9704efd11a13f0bbf246f5eec624f7e8c20c19e0b4281"
+  },
+  "gatewayUrl": "https://bah5acgzaour3xpm3cf6bhox4s6wqeulr46ybuzpvskyfp4qh5oug5wvknnea.bzz.limo/",
+  "readVerifiedAt": "2026-11-07T00:19:04.193Z",
+  "files": [
+    {
+      "path": "results.json",
+      "sha256": "4766716c5cfb652068b85f612da683a83bc6955358cc09bbebe04964a5ac015c",
+      "bytes": 850455,
+      "contentType": "application/json"
+    },
+    {
+      "path": "results.csv",
+      "sha256": "0a49cd084a25044389de8158a693e101c29796787abd6137105c82a1d9b16ff3",
+      "bytes": 618978,
+      "contentType": "text/csv;charset=utf-8"
+    },
+    {
+      "path": "index.html",
+      "sha256": "360ab756578aeb4e43c989bcfb4c4900f03c0ec89dc136ce643d065b0fda0847",
+      "bytes": 23500,
+      "contentType": "text/html;charset=utf-8"
+    }
+  ]
+}

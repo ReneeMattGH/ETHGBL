@@ -1,0 +1,74 @@
+{
+  "network": { "name": "Arkiv Rabdi", "chainId": 7794095, "sourceChainId": 137 },
+  "entityChecksAt": "2026-11-07T02:18:03.546Z",
+  "entityReadBlock": "316056",
+  "wallets": {
+    "definitionOwner": "0x4ef7b87c31ed098e5e128a27a3a772698ab8dd9b",
+    "ingestionWriter": "0xe7ac45525bd9fec84902371aaa65cf53c7d89909"
+  },
+  "dataset": {
+    "schema": "axis.dataset.v1",
+    "key": "0x0c190ee3773030e0ada7b23d11717ee99a86adc4e7c4478c23e87149a653b89b",
+    "owner": "0x4ef7b87c31ed098e5e128a27a3a772698ab8dd9b",
+    "creator": "0x4ef7b87c31ed098e5e128a27a3a772698ab8dd9b",
+    "writer": "0xe7ac45525bd9fec84902371aaa65cf53c7d89909",
+    "expiresAtBlock": "1604068",
+    "name": "Polygon USDC transfers",
+    "continuous": true,
+    "startBlock": "96864289"
+  },
+  "dashboard": {
+    "schema": "axis.dashboard.v1",
+    "key": "0xcb7fccae9b8fd715ce0a465687b0e189efb324ce83d07bfd95b781e2902e40c6",
+    "owner": "0x4ef7b87c31ed098e5e128a27a3a772698ab8dd9b",
+    "creator": "0x4ef7b87c31ed098e5e128a27a3a772698ab8dd9b",
+    "expiresAtBlock": "1608430",
+    "title": "Polygon USDC Dashboard",
+    "widgets": 8,
+    "url": "https://axis-reports-e7ac45525b.vercel.app/d/0xcb7fccae9b8fd715ce0a465687b0e189efb324ce83d07bfd95b781e2902e40c6"
+  },
+  "sampleTransfer": {
+    "schema": "axis.transfer.v1",
+    "key": "0x00030dbaa48c14bec9a685dbde174ff35fe7d54133daca56b15ee35a6f6d3186",
+    "owner": "0xe7ac45525bd9fec84902371aaa65cf53c7d89909",
+    "creator": "0xe7ac45525bd9fec84902371aaa65cf53c7d89909",
+    "expiresAtBlock": "1610621"
+  },
+  "coverage": {
+    "checkedAt": "2026-11-07T02:18:54.107Z",
+    "fromBlock": "96864289",
+    "throughBlock": "96864708",
+    "expectedRows": 8726,
+    "actualRows": 8726,
+    "manifests": 42,
+    "gaps": []
+  },
+  "judgeQuery": {
+    "predicate": "arkiv.schema = str('axis.dashboard.v1') AND $owner = addr(0x4ef7b87c31ed098e5e128a27a3a772698ab8dd9b) AND published = true AND $key = key(0xcb7fccae9b8fd715ce0a465687b0e189efb324ce83d07bfd95b781e2902e40c6)",
+    "returnedCount": "1",
+    "readBlock": "316081"
+  },
+  "publicHttpChecks": {
+    "checkedOn": "2026-11-07",
+    "workspace": { "url": "https://axis-platform-e7ac45525b.vercel.app", "status": 200 },
+    "backendHealth": { "url": "https://32-236-64-57.sslip.io/api/health", "status": 200 },
+    "viewerHealth": { "url": "https://axis-reports-e7ac45525b.vercel.app/api/health", "status": 200 },
+    "dashboardPageStatus": 200
+  },
+  "publicBrowserCheck": {
+    "checkedAt": "2026-11-07T02:20:11.365Z",
+    "title": "Polygon USDC Dashboard",
+    "visuals": 8,
+    "renderedMetrics": ["5.6M", "8,726", "1,912", "4"],
+    "reportApiResponsesObserved": 3,
+    "runtimeErrors": [],
+    "fixtures": false
+  },
+  "notes": [
+    "These are dated live reads, not permanent counts or a guarantee of hosting availability.",
+    "The dataset can advance while ingestion runs. Coverage counts describe the stated verified source interval.",
+    "Entity expiry is recorded in Arkiv blocks, not Polygon blocks or Unix seconds.",
+    "No live wait-through-expiry observation is claimed.",
+    "Separate Swarm transaction and file-checksum evidence is in arkiv/swarm-proof.json."
+  ]
+}
