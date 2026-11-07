@@ -1,4 +1,4 @@
-# AXIS — Arkiv Query & Dashboard Studio
+# AXIS — Arkiv eXploration & Intelligence System
 
 AXIS turns verified onchain records into reports you can own and share. Pick a dataset, build filters or ask in English, inspect the returned table, and turn that query into an interactive dashboard. The records, source coverage, dataset definitions and published dashboards live in Arkiv.
 
