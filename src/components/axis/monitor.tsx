@@ -1,9 +1,29 @@
 "use client";
-import Link from "next/link";
-import type { Job, PlatformConfig } from "@/lib/axis/model";
-import { useApi, PageIntro, Panel, Stat, Notice, RefreshButton, Empty, short } from "./shared";
+
+import type { IngestionCounts } from "@/lib/axis/ingestion-counts";
+import { useApi, PageIntro, Panel, Stat, Notice, RefreshButton, Empty, Loading } from "./shared";
+
+const number = (value: string) => BigInt(value).toLocaleString("en-US");
+
 export function IngestionMonitor() {
-  const resource = useApi<{ jobs: Job[]; worker: PlatformConfig["worker"] }>("ingestion", 5000);
-  const jobs = resource.data?.jobs ?? [];
-  return <><PageIntro title="Ingestion Monitor" description="Real worker progress, readback verification, failures, and transaction evidence."><RefreshButton loading={resource.loading} onClick={resource.refresh} /></PageIntro><div className="axis-stats"><Stat label="Worker" value={resource.data?.worker.running ? "Running" : "Offline"} /><Stat label="Completed jobs" value={jobs.filter(job => job.stage === "complete").length} /><Stat label="Failed jobs" value={jobs.filter(job => job.stage === "failed").length} /><Stat label="In progress" value={jobs.filter(job => !["failed", "complete"].includes(job.stage)).length} /></div>{!resource.data?.worker.running && <Notice>Run <code>npm.cmd run worker</code> in a separate terminal. Checkpoints and the local queue survive restarts; verified records and coverage are published to Arkiv.</Notice>}{resource.error && <Notice tone="error">{resource.error}</Notice>}{jobs.length ? jobs.map(job => <Panel key={job.id} title={`Blocks ${job.fromBlock}–${job.toBlock}`} actions={<span className={`axis-badge ${job.stage === "failed" ? "danger" : ""}`}>{job.stage}</span>}><div className="axis-form-grid"><p>Written this run: <b>{job.processed}</b> / extracted <b>{job.total}</b><br />Existing records reused: <b>{job.duplicates}</b></p><p>Updated {new Date(job.updatedAt).toLocaleString()}<br /><Link href={`/datasets/${job.datasetKey}`} className="axis-inline-link">Open dataset {short(job.datasetKey)}</Link></p></div>{job.error && <Notice tone="error">{job.error}</Notice>}<details><summary>{job.txHashes.length} actual Arkiv transactions</summary><div className="axis-tx-list">{job.txHashes.map((hash, index) => <a key={`${hash}-${index}`} href={`https://rabdi.explorer.arkiv.network/tx/${hash}`} target="_blank" rel="noreferrer">{hash}</a>)}</div></details></Panel>) : <Empty>No ingestion jobs. Publish a dataset, then request its first import.</Empty>}</>;
+  const resource = useApi<IngestionCounts>("ingestion/counts", 15000);
+  const data = resource.error ? null : resource.data;
+  return <>
+    <PageIntro title="Ingestion Monitor"><RefreshButton loading={resource.loading} onClick={resource.refresh} /></PageIntro>
+    {resource.error && <Notice tone="error">{resource.error}</Notice>}
+    <div className="axis-stats axis-ingestion-stats">
+      <Stat label="Rows stored on Arkiv" value={data ? number(data.rows) : "—"} />
+      <Stat label="Block entries" value={data ? number(data.blocks) : "—"} />
+      <Stat label="Tables with data" value={data ? data.tables.length.toLocaleString("en-US") : "—"} />
+    </div>
+    <Panel title="Data on Arkiv" className="axis-table-panel">
+      {!data ? !resource.error && <Loading /> : !data.tables.length ? <Empty>No rows stored yet.</Empty> : <>
+        <div className="axis-table-wrap"><table aria-label="Arkiv stored data">
+          <thead><tr><th>Table</th><th>Stored rows</th></tr></thead>
+          <tbody>{data.tables.map(table => <tr key={table.id}><td>{table.name}</td><td>{number(table.rows)}</td></tr>)}</tbody>
+        </table></div>
+        <div className="axis-ingestion-updated">Updated <time dateTime={data.fetchedAt}>{new Date(data.fetchedAt).toLocaleTimeString()}</time></div>
+      </>}
+    </Panel>
+  </>;
 }
