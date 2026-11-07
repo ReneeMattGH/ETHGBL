@@ -1,7 +1,7 @@
 > [!IMPORTANT]
 > **ETHGlobal Mumbai 2026 — tracks we are applying for**
 >
-> - **[Build on Arkiv (from scratch)](arkiv/how-you-use-arkiv.md)** — our main track: queryable records, wallet-owned definitions and verified analytics on Arkiv.
+> - **[Mirror something Ethereum depends on](arkiv/how-you-use-arkiv.md)** — our main track: queryable records, wallet-owned definitions and verified analytics on Arkiv.
 > - **[Arkiv + Swarm bonus (from scratch)](arkiv/swarm.md)** — public query archives on Swarm, referenced and verified through Arkiv entities.
 
 <p align="center">
