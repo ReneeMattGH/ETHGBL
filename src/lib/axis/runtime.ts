@@ -10,7 +10,12 @@ export function arkivEndpoint(): string {
   if (key && !url.pathname.replace(/\/+$/, "").endsWith(`/${encodeURIComponent(key)}`)) url.pathname = `${url.pathname.replace(/\/+$/, "")}/${encodeURIComponent(key)}`;
   return url.toString();
 }
-export const arkivReader = () => createPublicClient({ chain: rabdi({ accessKey: process.env.ARKIV_ACCESS_KEY?.trim() ?? "" }), transport: http(arkivEndpoint(), { timeout: 20000, retryCount: 0 }) });
+let reader: { endpoint: string; client: ReturnType<typeof createPublicClient> } | undefined;
+export function arkivReader() {
+  const endpoint = arkivEndpoint();
+  if (!reader || reader.endpoint !== endpoint) reader = { endpoint, client: createPublicClient({ chain: rabdi({ accessKey: process.env.ARKIV_ACCESS_KEY?.trim() ?? "" }), transport: http(endpoint, { timeout: 20000, retryCount: 0 }) }) };
+  return reader.client;
+}
 export function workerWriter() {
   const secret = process.env.AXIS_INDEXER_PRIVATE_KEY?.trim();
   if (!secret) throw new Error("The local worker signer is not configured.");
@@ -25,7 +30,7 @@ export function writerAddress() {
 }
 export function safeError(error: unknown): string {
   let message = error instanceof Error ? error.message : String(error);
-  for (const field of ["ARKIV_ACCESS_KEY", "POLYGON_RPC_URL", "ARKIV_RPC_URL", "AXIS_INDEXER_PRIVATE_KEY"]) {
+  for (const field of ["ARKIV_ACCESS_KEY", "POLYGON_RPC_URL", "ARKIV_RPC_URL", "AXIS_INDEXER_PRIVATE_KEY", "OPENROUTER_API_KEY", "SWARM_API_TOKEN", "SWARM_BEE_URL", "SWARM_READ_GATEWAY_URL"]) {
     const value = process.env[field]?.trim();
     if (value) {
       message = message.split(value).join("[redacted]");
