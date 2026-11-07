@@ -1,4 +1,26 @@
-# AXIS: public query snapshots on Arkiv and Swarm
+# Arkiv + Swarm bonus: AXIS public query archives
+
+AXIS uses Swarm to keep a report someone can open and download later. A live dashboard changes as new transfers arrive. An archive keeps the captured rows, source interval and report together, so sharing a result does not depend on a screenshot or a fresh query returning the same data.
+
+Swarm stores the files people read. Arkiv stores the wallet-owned snapshot entity that points to those files, alongside the underlying dataset and coverage entities. This is a combined Arkiv-and-Swarm feature, not a Swarm-only upload demo.
+
+## Bonus entry and evidence at a glance
+
+This document covers the **Arkiv + Swarm bonus (from scratch)** alongside our **Build on Arkiv (from scratch)** submission. Select the bonus in the ETHGlobal submission form as well as the main track. Arkiv's tracks and this bonus count as one partner-prize selection. [Official prize requirements](https://ethglobal.com/events/mumbai/prizes).
+
+| Required detail | What we have now |
+| --- | --- |
+| What is on each network / reference field | Four report/export files on Swarm; `axis.snapshot.v1.swarmReference` and its manifest checksum on Arkiv. See [What lives where](#what-lives-where). |
+| One Arkiv entity and its Swarm reference | Both are recorded below, with an openable report and manifest. |
+| Actual postage batch ID | **Not available.** The public gateway supplied postage; its all-zero selector is not the underlying batch ID. |
+| Batch buyer or donor | **Not disclosed.** We know the uploading service, not the wallet or operator that funded its underlying batch. |
+| Bee node / upload service | `https://api.gateway.ethswarm.org/bzz`. The service's underlying Bee node identity is not disclosed. |
+| Upload and read implementation | Linked in [Upload and read code](#upload-and-read-code). |
+| Reproducible upload and read | App and Windows CLI steps are below. A fresh CLI read verified the existing 1,007-row archive on **7 November 2026 at 02:40:06 UTC**. |
+| Demo video moment | **Not available.** No demo video link or real timestamp has been supplied; the sequence to record is listed below. |
+| Swarm feedback | Specific SDK, serving, recovery and retention issues are documented in [What got in the way](#what-got-in-the-way). |
+
+The integration works, but the required postage provenance and video moment are still missing from the submission evidence. We have left them explicit rather than inventing a batch, buyer or timestamp.
 
 ## Current evidence
 
@@ -6,8 +28,8 @@
 
 | Submission evidence | Current value |
 | --- | --- |
-| Arkiv snapshot entity key | `0x1a8d55399f8eedc9377a3e26ba34abc116d20b6eeb7599bb996a086fbcbc0109` |
-| Arkiv creation transaction | `0xe3aebb9fb0579dbb5b6644c29e9337d88ec06ae56a8f837a8019f35b174a20cf` |
+| Arkiv snapshot entity key | [`0x1a8d55399f8eedc9377a3e26ba34abc116d20b6eeb7599bb996a086fbcbc0109`](https://rabdi.explorer.arkiv.network/entity/0x1a8d55399f8eedc9377a3e26ba34abc116d20b6eeb7599bb996a086fbcbc0109) |
+| Arkiv creation transaction | [`0xe3aebb9fb0579dbb5b6644c29e9337d88ec06ae56a8f837a8019f35b174a20cf`](https://rabdi.explorer.arkiv.network/tx/0xe3aebb9fb0579dbb5b6644c29e9337d88ec06ae56a8f837a8019f35b174a20cf) |
 | Swarm collection reference | `7523bbbd9b117c13bafc97ad025171e7b01a65f592b057f207eba86edaaa6b48` |
 | Openable Swarm report | [Open live report](https://bah5acgzaour3xpm3cf6bhox4s6wqeulr46ybuzpvskyfp4qh5oug5wvknnea.bzz.limo/) |
 | Manifest with file hashes | [Open manifest](https://bah5acgzaour3xpm3cf6bhox4s6wqeulr46ybuzpvskyfp4qh5oug5wvknnea.bzz.limo/manifest.json) |
@@ -18,7 +40,9 @@
 | Arkiv publisher wallet | `0xe7ac45525bd9fec84902371aaa65cf53c7d89909` |
 | Demo video timestamp | Pending recording of the real flow |
 
-Public evidence and file checksums are recorded in [`swarm-proof.json`](swarm-proof.json). The CLI also maintains the ignored operator copy `.axis/swarm-proof.json`. The shared app viewer is `/snapshots/0x1a8d55399f8eedc9377a3e26ba34abc116d20b6eeb7599bb996a086fbcbc0109`. That route runs in the separately hosted AXIS app; the report link above is served from Swarm.
+Public evidence and file checksums are recorded in [`swarm-proof.json`](swarm-proof.json). The CLI also maintains the ignored operator copy `.axis/swarm-proof.json`. The [shared AXIS snapshot viewer](https://axis-platform-e7ac45525b.vercel.app/snapshots/0x1a8d55399f8eedc9377a3e26ba34abc116d20b6eeb7599bb996a086fbcbc0109) loads that Arkiv entity and verifies its Swarm files. The standalone report link above is served from Swarm.
+
+We repeated the read on **7 November 2026 at 02:40:06 UTC (08:10:06 IST)** using the repository's CLI. It returned the same reference and **1,007 archived rows** after the remote-file checks. A separate direct download of `manifest.json` and `index.html` returned HTTP 200 and matching SHA-256 values. These are dated read checks, not a new upload or proof of undisclosed postage ownership.
 
 ## What lives where
 
@@ -35,16 +59,20 @@ Arkiv holds a wallet-owned `axis.snapshot.v1` entity. The **`swarmReference` fie
 
 The underlying ingestion entities remain on Arkiv. Archiving does not increase the ingestion monitor's Arkiv row count. The snapshot viewer reads the Arkiv entity and then the Swarm collection; it does not rerun a live query to replace expired or changed source data.
 
-Only public snapshots are supported. Uploads explicitly use `encrypt: false`; both publication and reads reject 128-hex encrypted references. An encrypted reference contains its decryption key and must never be written publicly as-is. Private snapshots and feeds are outside this implementation.
+### Encrypted references and public entities
+
+Only public snapshots are supported. Uploads explicitly use `encrypt: false`; both publication and reads reject 128-hex encrypted references. An encrypted reference contains its decryption key and must never be written into a public Arkiv entity as-is. Our published reference is a **64-hex public content reference**, not an encrypted reference with an embedded key.
+
+If we add private archives later, the encrypted reference must stay off Arkiv or be encrypted separately for its intended recipients before it is published. That private-sharing flow and Swarm feeds are not implemented or claimed here. [Swarm's encryption guidance](https://docs.ethswarm.org/docs/develop/tools-and-features/store-with-encryption/).
 
 ## Upload and read code
 
 | File | Responsibility |
 | --- | --- |
-| `src/lib/axis/swarm.ts` | Bee connection and batch checks, signed upload authorization, server-side query export, SDK collection upload, independent gateway downloads, checksum verification, Arkiv-linked reads, recovery |
-| `src/lib/axis/swarm-package.ts` | CSV, JSON, HTML report, checksums, manifest and size validation |
-| `src/lib/axis/swarm-model.ts` | Public reference/document validation, signed intent format and shared types |
-| `src/lib/axis/swarm-schema.ts` | Arkiv snapshot schema |
+| [src/lib/axis/swarm.ts](../src/lib/axis/swarm.ts) | Bee connection and batch checks, signed upload authorization, server-side query export, SDK collection upload, independent gateway downloads, checksum verification, Arkiv-linked reads, recovery |
+| [src/lib/axis/swarm-package.ts](../src/lib/axis/swarm-package.ts) | CSV, JSON, HTML report, checksums, manifest and size validation |
+| [src/lib/axis/swarm-model.ts](../src/lib/axis/swarm-model.ts) | Public reference/document validation, signed intent format and shared types |
+| [src/lib/axis/swarm-schema.ts](../src/lib/axis/swarm-schema.ts) | Arkiv snapshot schema |
 | `src/app/api/axis/swarm/[...path]/route.ts` | Status/check/upload/snapshot-read endpoints |
 | `src/components/axis/swarm-snapshot.tsx` | Public consent, publishing progress, retry and shared viewer |
 | `src/components/axis/swarm-recovery.ts` | Browser-local recovery of public upload receipts, isolated by query and publishing wallet |
@@ -53,7 +81,7 @@ Only public snapshots are supported. Uploads explicitly use `encrypt: false`; bo
 | `src/components/axis/query-studio.tsx` | Archive action on executed query results |
 | `src/app/snapshots/[id]/page.tsx` | Shareable Arkiv-key-based viewer |
 | `src/app/snapshots/page.tsx` | Snapshot library available from the workspace navigation |
-| `scripts/axis-swarm.ts` | Operator connection check, upload, publication, read and recovery |
+| [scripts/axis-swarm.ts](../scripts/axis-swarm.ts) | Operator connection check, upload, publication, read and recovery |
 
 The application uses the official `@ethersphere/bee-js` SDK, pinned to 13.2.0. We consulted Swarm's official quickstart skill and MCP implementation; a Swarm MCP server is not configured in this session and is not required by the running application.
 
@@ -102,6 +130,16 @@ The working report URL is the CID-based `bzz.limo` link in the evidence table ab
 
 Run these commands from `E:\ETHGBL`. The upload/publish commands explicitly load the existing ignored `.env.worker.local` signer; check/read commands do not load that signer. Add its public address to the uploader allowlist. The worker needs tGLM for the Arkiv entity transaction, separately from any Swarm postage funding.
 
+To read the already-published example, use the actual key below. This does not upload anything, buy postage or send an Arkiv transaction. It needs the repository's dependencies, Arkiv read access and a reachable read gateway configured as above:
+
+```powershell
+npm.cmd run swarm -- read --entity 0x1a8d55399f8eedc9377a3e26ba34abc116d20b6eeb7599bb996a086fbcbc0109
+```
+
+Expect `rows: 1007`, the `7523bbbd…aaa6b48` reference recorded above, the openable gateway URL and a fresh `verifiedAt`. A failed file or checksum check is an error, not a successful read of cached source data.
+
+For one new upload and its readback, use a verified dataset available in your running AXIS instance and your own authorized, funded publisher. Replace the dataset key and returned entity key in these commands; do not reuse someone else's signing key:
+
 ```powershell
 npm.cmd run swarm -- check
 npm.cmd run swarm -- upload --dataset YOUR_VERIFIED_DATASET_KEY --title "Polygon snapshot" --publish
@@ -124,7 +162,9 @@ Upload authorization is valid for 10 minutes; local CLI recovery remains availab
 
 ## Demo video
 
-**Timestamp pending.** Record execute query → public consent → Swarm upload/readback → Arkiv publication → open the share link in another browser → download CSV or view the standalone Swarm report. Record the actual timestamp here after filming.
+**Video URL: not provided. Actual Swarm timestamp: not recorded.** We cannot claim a video moment from the upload time, transaction time or CLI verification time.
+
+The sequence to show is: execute query → public consent → Swarm upload/readback → Arkiv publication → open the share link in another browser → download CSV or view the standalone Swarm report. Record the real `mm:ss` from the final demo video here after filming. This is a recording plan, not existing video evidence.
 
 ## What got in the way
 

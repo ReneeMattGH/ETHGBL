@@ -18,6 +18,7 @@ Viewing the report does not require a wallet. Publishing or editing a definition
 | What users gain from Arkiv and what stays elsewhere | [arkiv/why-arkiv.md](arkiv/why-arkiv.md) |
 | The read/write flow and visible use of Arkiv features | [arkiv/how-you-use-arkiv.md](arkiv/how-you-use-arkiv.md) |
 | Dated live entity, owner, expiry and coverage evidence | [arkiv/proof.json](arkiv/proof.json) |
+| Arkiv + Swarm bonus: archive links, code, reproduction and remaining proof | [arkiv/swarm.md](arkiv/swarm.md) |
 
 The public frontend, API health check and report page returned HTTP 200 on 7 November 2026. The report's real Arkiv definition contains eight widgets. A separate live coverage check at 02:18:54 UTC found 8,726 verified transfers in its stated source range, with no coverage gaps. These are dated observations, not fixed future counts. [Reach and demo details](arkiv/reach.md).
 

@@ -27,6 +27,26 @@
   },
   "gatewayUrl": "https://bah5acgzaour3xpm3cf6bhox4s6wqeulr46ybuzpvskyfp4qh5oug5wvknnea.bzz.limo/",
   "readVerifiedAt": "2026-11-07T00:19:04.193Z",
+  "latestReadVerification": {
+    "verifiedAt": "2026-11-07T02:40:06.654Z",
+    "command": "npm.cmd run swarm -- read --entity 0x1a8d55399f8eedc9377a3e26ba34abc116d20b6eeb7599bb996a086fbcbc0109",
+    "rows": 1007,
+    "swarmReference": "7523bbbd9b117c13bafc97ad025171e7b01a65f592b057f207eba86edaaa6b48",
+    "remoteFileVerification": "passed"
+  },
+  "bonusEvidence": {
+    "track": "Arkiv + Swarm bonus (from scratch)",
+    "actualPostageBatchId": null,
+    "batchBuyerOrDonor": null,
+    "uploadEndpoint": "https://api.gateway.ethswarm.org/bzz",
+    "demoVideoUrl": null,
+    "demoVideoTimestamp": null,
+    "requiredEvidenceComplete": false,
+    "missing": [
+      "Actual postage batch ID and verifiable buyer/donor information; the gateway selector is not a batch ID.",
+      "Demo video URL and the actual moment Swarm is demonstrated."
+    ]
+  },
   "files": [
     {
       "path": "results.json",
