@@ -15,6 +15,7 @@ export const TransferSchema = defineSchema("axis.transfer.v1", {
   amountRaw: u256().indexed(), amount: str(), decimals: u64(), contentHash: key(), rpcHost: str(),
   ingestedAt: u64(), abiVersion: str(), eventSignature: str(),
 });
+export const transferAttributeFields = Object.entries(TransferSchema.columns).map(([name, field]) => ({ name, type: field.type, indexed: field.isIndexed }));
 export const BlockSchema = defineSchema("axis.block.v1", {
   datasetKey: key().indexed(), sourceId: str().indexed(), blockNumber: u64().indexed(),
   blockHash: key(), sourceTime: u64().indexed(), chainId: u64().indexed(),

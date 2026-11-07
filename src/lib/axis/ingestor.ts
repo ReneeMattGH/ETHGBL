@@ -4,7 +4,8 @@ import { stringToBytes, type Hex } from "viem";
 import { BlockSchema, ContractSchema, CoverageSchema, CoverageAlertSchema, MetricSchema, StatusSchema, TransferSchema } from "./schemas";
 import { aggregateTransfers, hashDocument, nowSeconds, validateBlockRange, SourceConsistencyError } from "./core";
 import { USDC, type Job, type Transfer } from "./model";
-import { arkivReader, workerWriter, writerAddress, retryRead, safeError } from "./runtime";
+import { arkivReader, writerAddress, retryRead, safeError } from "./runtime";
+import { serialWorkerWriter as workerWriter } from "./signing";
 import { baseQuery, coverageSummary, getDataset, getEntity, listCoverage, pageEntities, scanEntities, transferBase, transferOf, unpack } from "./store";
 import { extractRange, verifyBlockHashes } from "./polygon";
 import { saveJob, writeState } from "./queue";
@@ -39,6 +40,7 @@ export async function runJob(job: Job) {
   const writer = workerWriter();
   try {
     const dataset = await getDataset(job.datasetKey);
+    if (dataset.resultSource) throw new Error("Saved result datasets cannot run new imports.");
     if (!dataset.enabled || dataset.owner !== job.owner.toLowerCase()) throw new Error("Dataset was paused or its owner changed.");
     const [from, to] = validateBlockRange(job.fromBlock, job.toBlock);
     if (from < BigInt(dataset.startBlock) || dataset.endBlock !== "0" && to > BigInt(dataset.endBlock)) throw new Error("Job exceeds the owner-defined dataset range.");
@@ -46,7 +48,9 @@ export async function runJob(job: Job) {
     const pendingNonce = await arkivReader().getTransactionCount({ address: writer.account.address, blockTag: "pending" });
     if (latestNonce !== pendingNonce) throw new Error("Writer has an unresolved transaction. Wait for reconciliation before retrying.");
     const prior = await listCoverage(dataset.key);
-    await verifyBlockHashes(Object.assign({}, ...prior.map(item => item.blockHashes)));
+    // The most recent canonical block hash commits to its full ancestry. Do not re-download every old header per job.
+    const boundary = prior.at(-1);
+    if (boundary) await verifyBlockHashes({ [boundary.toBlock]: boundary.blockHashes[boundary.toBlock] });
     await ensureContract();
     job.stage = "extracting"; job.error = null; await publishStatus(job);
     for (let start = from; start <= to; start += 10n) {
@@ -59,7 +63,7 @@ export async function runJob(job: Job) {
       const summary = await coverageSummary(dataset);
       if (summary.gaps.length) throw new Error(summary.gaps.join(" "));
       if (start !== (summary.throughBlock ? BigInt(summary.throughBlock) + 1n : BigInt(dataset.startBlock))) throw new Error("New imports must continue directly after verified coverage.");
-      const source = await extractRange(start.toString(), end.toString());
+      const source = await extractRange(start.toString(), end.toString(), summary.throughBlock ? summary.manifests.at(-1)!.blockHashes[summary.throughBlock] : undefined);
       job.total += source.rows.length; job.stage = "publishing"; await publishStatus(job);
       const existing = (await scanEntities(`${transferBase(dataset.key)} AND blockNumber >= u64(${start}) AND blockNumber <= u64(${end})`)).map(transferOf);
       const identities = new Map(existing.map(row => [row.sourceId, row]));

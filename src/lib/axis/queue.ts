@@ -4,7 +4,30 @@ import { randomUUID } from "node:crypto";
 import type { Job } from "./model";
 export const runtimeDirectory = () => join(process.cwd(), ".axis");
 export async function readState<T>(name: string, fallback: T): Promise<T> { try { return JSON.parse(await readFile(join(runtimeDirectory(), name + ".json"), "utf8")) as T; } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return fallback; throw error; } }
-export async function writeState(name: string, value: unknown) { await mkdir(runtimeDirectory(), { recursive: true }); const target = join(runtimeDirectory(), name + ".json"), temporary = target + "." + randomUUID(); await writeFile(temporary, JSON.stringify(value)); await rename(temporary, target); }
+const pendingStateWrites = new Map<string, Promise<void>>();
+export async function writeState(name: string, value: unknown) {
+  const directory = resolve(runtimeDirectory()), target = resolve(directory, name + ".json");
+  if (!target.startsWith(directory + sep)) throw new Error("State is outside the local runtime directory.");
+  const serialized = JSON.stringify(value);
+  const previous = pendingStateWrites.get(target) ?? Promise.resolve();
+  const write = previous.catch(() => {}).then(async () => {
+    await mkdir(directory, { recursive: true });
+    const temporary = target + "." + randomUUID();
+    try {
+      await writeFile(temporary, serialized);
+      for (let attempt = 0; ; attempt++) {
+        try { await rename(temporary, target); break; }
+        catch (error) {
+          // Windows readers and concurrent heartbeat writes can briefly hold a file.
+          if (attempt >= 6 || !["EPERM", "EACCES", "EBUSY"].includes((error as NodeJS.ErrnoException).code ?? "")) throw error;
+          await new Promise(resolve => setTimeout(resolve, 20 * 2 ** attempt));
+        }
+      }
+    } finally { await rm(temporary, { force: true }).catch(() => {}); }
+  });
+  pendingStateWrites.set(target, write);
+  try { await write; } finally { if (pendingStateWrites.get(target) === write) pendingStateWrites.delete(target); }
+}
 export async function withLock<T>(name: string, action: () => Promise<T>, attempts = 50): Promise<T> {
   if (!/^[a-z]+$/.test(name)) throw new Error("Invalid lock name.");
   await mkdir(runtimeDirectory(), { recursive: true }); const path = resolve(runtimeDirectory(), name + ".lock");

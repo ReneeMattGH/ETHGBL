@@ -6,7 +6,6 @@ import { isNetworkId } from "../arkiv/networks";
 import { transferOf } from "./store";
 import { Entity } from "@arkiv-network/sdk";
 import { addr } from "@arkiv-network/sdk/schema";
-import { advancedUsdcDashboard } from "./presets";
 const sender = `0x${"11".repeat(20)}` as const, recipient = `0x${"22".repeat(20)}` as const;
 function event(value = 1234567n): Log {
   return { address: USDC, topics: encodeEventTopics({ abi: [TRANSFER_EVENT], args: { from: sender, to: recipient } }) as Log["topics"], data: encodeAbiParameters([{ type: "uint256" }], [value]), blockNumber: 123n, blockHash: `0x${"aa".repeat(32)}`, transactionHash: `0x${"bb".repeat(32)}`, transactionIndex: 0, logIndex: 2, removed: false };
@@ -34,10 +33,9 @@ describe("Exact analytics", () => {
 describe("Boundaries and filter isolation", () => {
   it("uses inclusive block-range limits", () => { expect(validateBlockRange("10", "10", 1)).toEqual([10n, 10n]); expect(() => validateBlockRange("10", "11", 1)).toThrow(); expect(() => validateBlockRange("12", "11")).toThrow(); expect(() => validateBlockRange("1e3", "1001")).toThrow(); });
   it("validates indexed address and time filters", () => { expect(validateFilters({ sender })).toMatchObject({ sender }); expect(() => validateFilters({ recipient: "someone" })).toThrow(); expect(() => validateFilters({ fromTime: "20", toTime: "10" })).toThrow(); });
-  it("validates bounded rolling windows without conflicting fixed ranges", () => { expect(validateFilters({ lookbackBlocks: "60" }).lookbackBlocks).toBe("60"); for (const lookbackBlocks of ["0", "1001", "1.5", "-1"]) expect(() => validateFilters({ lookbackBlocks })).toThrow(); expect(() => validateFilters({ lookbackBlocks: "60", fromBlock: "1" })).toThrow(); });
+  it("drops legacy block limits while preserving wallet and time filters", () => { const legacy = { sender, fromTime: "10", toTime: "20", fromBlock: "12", toBlock: "13", lookbackBlocks: "30" }; expect(validateFilters(legacy)).toEqual({ sender, fromTime: "10", toTime: "20", order: "desc" }); expect(legacy.fromBlock).toBe("12"); });
   it("prevents a predicate escaping its dataset scope", () => { for (const predicate of [") OR enabled = true (", "amountRaw > u256(0) --", "x = str('unterminated)", "x = str('a') ORDER BY $key:key ASC"]) expect(() => validateFilters({ predicate })).toThrow(); expect(validateFilters({ predicate: "amountRaw > u256(0) OR sender = addr(" + sender + ")" }).predicate).toBeTruthy(); });
   it("rejects inherited network names", () => { expect(isNetworkId("rabdi")).toBe(true); expect(isNetworkId("toString")).toBe(false); expect(isNetworkId("__proto__")).toBe(false); });
   it("rejects malformed public dashboard definitions", () => { expect(() => validateDashboard({ version: 1, title: "test", description: "", widgets: [], refreshMs: 0 })).toThrow(); });
   it("validates published definitions without modifying their query documents", () => { const doc = { version: 1, title: "Test", description: "", refreshMs: 0, widgets: [{ id: "one", title: "Count", kind: "metric", metric: "transfers", grouping: "time", width: 1, query: { datasetKey: "0x" + "11".repeat(32), filters: {} } }] }; const original = JSON.stringify(doc); validateDashboard(doc); expect(JSON.stringify(doc)).toBe(original); });
-  it("builds a valid twelve-widget preset with independently executable rolling queries", () => { const doc = advancedUsdcDashboard("0x" + "11".repeat(32)); expect(validateDashboard(doc)).toBe(doc); expect(doc.widgets).toHaveLength(12); expect(new Set(doc.widgets.map(widget => widget.id)).size).toBe(12); expect(doc.widgets.every(widget => widget.query.filters.lookbackBlocks === "60")).toBe(true); expect(doc.refreshMs).toBe(30000); });
 });

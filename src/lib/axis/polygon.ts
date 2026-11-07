@@ -19,7 +19,7 @@ export async function finalizedBlock() {
   if (block.number === null) throw new Error("Source RPC did not return a finalized block.");
   return block;
 }
-export async function extractRange(from: string, to: string) {
+export async function extractRange(from: string, to: string, previousHash?: string) {
   const [start, end] = validateBlockRange(from, to, 1000), client = polygonReader();
   const finalized = await finalizedBlock();
   if (end > finalized.number!) throw new Error("Requested range is beyond the Polygon finalized boundary.");
@@ -28,7 +28,7 @@ export async function extractRange(from: string, to: string) {
   const blocks: { number: string; hash: string; timestamp: string }[] = [];
   for (let number = start; number <= end; number++) {
     const block = await retryRead(() => client.getBlock({ blockNumber: number }));
-    if (!block.hash || block.number !== number || (blocks.length && block.parentHash.toLowerCase() !== blocks.at(-1)!.hash.toLowerCase())) throw new SourceConsistencyError("Source block continuity failed.");
+    if (!block.hash || block.number !== number || (blocks.length && block.parentHash.toLowerCase() !== blocks.at(-1)!.hash.toLowerCase()) || (!blocks.length && previousHash && block.parentHash.toLowerCase() !== previousHash.toLowerCase())) throw new SourceConsistencyError("Source block continuity failed.");
     blocks.push({ number: number.toString(), hash: block.hash.toLowerCase(), timestamp: block.timestamp.toString() });
   }
   const getLogs = async (a: bigint, b: bigint): Promise<Awaited<ReturnType<typeof client.getLogs>>> => {
