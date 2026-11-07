@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title description" font-family="Arial, Helvetica, sans-serif"><title id="title">AXIS system architecture</title><desc id="description">A Vercel workspace and independent public viewer read verified Arkiv data. The AWS API validates query scopes and uploads Swarm archives. A dedicated worker reads source data and publishes verified records. User wallets own report definitions. OpenRouter receives only prompts and schemas.</desc><defs><marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#173bff"/></marker><marker id="green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#009b78"/></marker><marker id="purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#9500ff"/></marker><marker id="pink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#e52b86"/></marker><marker id="amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="#bb8200"/></marker></defs><rect width="1440" height="900" rx="20" fill="#fff"/>
+<text x="40" y="26" font-size="14" font-weight="700" fill="#334155" letter-spacing="1.4">AXIS  /  SYSTEM ARCHITECTURE</text>
+<rect x="348" y="198" width="350" height="560" rx="20" fill="#f7f9ff" stroke="#dbe3f2" stroke-width="1.6"/>
+<rect x="835" y="198" width="560" height="560" rx="20" fill="#faf8ff" stroke="#e3daf6" stroke-width="1.6"/>
+<text x="370" y="226" font-size="14" font-weight="700" fill="#334155" letter-spacing=".8">AWS  ·  API + INGESTION</text>
+<text x="860" y="226" font-size="14" font-weight="700" fill="#594170" letter-spacing=".8">PUBLIC DATA + FILE STORAGE</text>
+<path d="M175 174V296H370" fill="none" stroke="#fff" stroke-width="8"/><path d="M175 174V296H370" fill="none" stroke="#173bff" stroke-width="2.7"  marker-end="url(#blue)"/>
+<path d="M676 112H785V334H860" fill="none" stroke="#fff" stroke-width="8"/><path d="M676 112H785V334H860" fill="none" stroke="#bb8200" stroke-width="2.7"  marker-end="url(#amber)"/>
+<path d="M1215 174V245" fill="none" stroke="#fff" stroke-width="8"/><path d="M1215 174V245" fill="none" stroke="#173bff" stroke-width="2.7"  marker-end="url(#blue)"/>
+<path d="M676 290H860" fill="none" stroke="#fff" stroke-width="8"/><path d="M676 290H860" fill="none" stroke="#173bff" stroke-width="2.7"  marker-end="url(#blue)"/>
+<path d="M310 487H370" fill="none" stroke="#fff" stroke-width="8"/><path d="M310 487H370" fill="none" stroke="#009b78" stroke-width="2.7"  marker-end="url(#green)"/>
+<path d="M676 487H730V390H860" fill="none" stroke="#fff" stroke-width="8"/><path d="M676 487H730V390H860" fill="none" stroke="#009b78" stroke-width="2.7"  marker-end="url(#green)"/>
+<path d="M676 345H805V590H860" fill="none" stroke="#fff" stroke-width="8"/><path d="M676 345H805V590H860" fill="none" stroke="#173bff" stroke-width="2.7"  marker-end="url(#blue)"/>
+<path d="M523 550V625" fill="none" stroke="#fff" stroke-width="8"/><path d="M523 550V625" fill="none" stroke="#94a3b8" stroke-width="2.7"  />
+<path d="M370 356H20V705H40" fill="none" stroke="#fff" stroke-width="8"/><path d="M370 356H20V705H40" fill="none" stroke="#e52b86" stroke-width="2.7" stroke-dasharray="7 6" marker-end="url(#pink)"/>
+<path d="M1115 425V540" fill="none" stroke="#fff" stroke-width="8"/><path d="M1115 425V540" fill="none" stroke="#9500ff" stroke-width="2.7" stroke-dasharray="7 6" marker-end="url(#purple)"/>
+<text x="192" y="274" font-size="15" font-weight="500" fill="#111827" >query / archive requests</text>
+<text x="700" y="91" font-size="15" font-weight="500" fill="#111827" >owner-signed definitions</text>
+<text x="1232" y="204" font-size="15" font-weight="500" fill="#111827" >scoped reads</text>
+<text x="705" y="274" font-size="15" font-weight="500" fill="#111827" >query + read</text>
+<text x="740" y="449" font-size="15" font-weight="500" fill="#006b54" >verified</text>
+<text x="740" y="469" font-size="15" font-weight="500" fill="#006b54" >records</text>
+<text x="700" y="565" font-size="15" font-weight="500" fill="#173bff" >upload +</text>
+<text x="700" y="585" font-size="15" font-weight="500" fill="#173bff" >verify files</text>
+<text x="537" y="595" font-size="15" font-weight="500" fill="#334155" >shared journal</text>
+<text x="87" y="339" font-size="15" font-weight="500" fill="#a4175a" >prompt + selected schemas</text>
+<text x="1135" y="477" font-size="16" font-weight="600" fill="#6a17a9" >swarmReference</text>
+<text x="1135" y="500" font-size="16" font-weight="500" fill="#6a17a9" >+ manifest hash</text>
+<rect x="40" y="50" width="270" height="124" rx="16" fill="#173bff" stroke="#173bff" stroke-width="1.6"/>
+<text x="62" y="84" font-size="23" font-weight="700" fill="#fff" >AXIS workspace</text>
+<text x="62" y="115" font-size="18" font-weight="400" fill="#fff" >Explore · Query · Build</text>
+<text x="62" y="144" font-size="18" font-weight="400" fill="#fff" >Public query archives</text>
+<rect x="370" y="50" width="306" height="124" rx="16" fill="#fff7c4" stroke="#d7b33e" stroke-width="1.6"/>
+<text x="392" y="84" font-size="23" font-weight="700" fill="#111827" >Owner wallet</text>
+<text x="392" y="115" font-size="18" font-weight="400" fill="#111827" >Publish · Edit · Renew</text>
+<text x="392" y="144" font-size="17" font-weight="400" fill="#111827" >Keys stay in the wallet</text>
+<rect x="1035" y="50" width="360" height="124" rx="16" fill="#e9f0ff" stroke="#b6c8ff" stroke-width="1.6"/>
+<text x="1057" y="84" font-size="23" font-weight="700" fill="#111827" >Public report viewer</text>
+<text x="1057" y="115" font-size="17" font-weight="400" fill="#111827" >Independent read-only deployment</text>
+<text x="1057" y="144" font-size="18" font-weight="400" fill="#111827" >Dashboards + per-view filters</text>
+<rect x="370" y="245" width="306" height="125" rx="16" fill="#fff" stroke="#aebed9" stroke-width="1.6"/>
+<text x="392" y="281" font-size="23" font-weight="700" fill="#111827" >Verified query API</text>
+<text x="392" y="314" font-size="18" font-weight="400" fill="#111827" >Validate scopes and filters</text>
+<text x="392" y="343" font-size="17" font-weight="400" fill="#111827" >Read Arkiv · Verify archives</text>
+<rect x="40" y="425" width="270" height="125" rx="16" fill="#dff9f1" stroke="#75cdb4" stroke-width="1.6"/>
+<text x="62" y="461" font-size="23" font-weight="700" fill="#07503d" >Source data</text>
+<text x="62" y="494" font-size="18" font-weight="400" fill="#111827" >Finalized Polygon blocks</text>
+<text x="62" y="523" font-size="17" font-weight="400" fill="#111827" >Selected reference APIs</text>
+<rect x="370" y="425" width="306" height="125" rx="16" fill="#fff" stroke="#aebed9" stroke-width="1.6"/>
+<text x="392" y="461" font-size="23" font-weight="700" fill="#111827" >Ingestion worker</text>
+<text x="392" y="494" font-size="17" font-weight="400" fill="#111827" >Extract · Normalize · Read back</text>
+<text x="392" y="523" font-size="17" font-weight="400" fill="#111827" >Dedicated ingestion wallet</text>
+<rect x="370" y="625" width="306" height="95" rx="16" fill="#eef2f9" stroke="#b9c5d8" stroke-width="1.6"/>
+<text x="392" y="657" font-size="21" font-weight="700" fill="#111827" >Persistent state</text>
+<text x="392" y="683" font-size="17" font-weight="400" fill="#111827" >Jobs · Locks · Nonces</text>
+<text x="392" y="706" font-size="16" font-weight="400" fill="#111827" >Upload receipts · Checkpoints</text>
+<rect x="40" y="650" width="270" height="110" rx="16" fill="#ffe9f2" stroke="#ef91ba" stroke-width="1.6"/>
+<text x="62" y="684" font-size="23" font-weight="700" fill="#8b1e50" >OpenRouter</text>
+<text x="62" y="716" font-size="17" font-weight="400" fill="#111827" >English → candidate filters</text>
+<text x="62" y="744" font-size="17" font-weight="400" fill="#111827" >Plan validated by AXIS</text>
+<rect x="860" y="245" width="510" height="180" rx="16" fill="#eadeff" stroke="#a26af2" stroke-width="1.6"/>
+<text x="887" y="284" font-size="27" font-weight="700" fill="#431280" >ARKIV RABDI</text>
+<text x="887" y="321" font-size="20" font-weight="400" fill="#111827" >Verified records + coverage manifests</text>
+<text x="887" y="353" font-size="18" font-weight="400" fill="#111827" >Wallet-owned datasets + report definitions</text>
+<text x="887" y="385" font-size="17" font-weight="400" fill="#111827" >Snapshot metadata · Ownership · Chosen expiry</text>
+<rect x="860" y="540" width="510" height="150" rx="16" fill="#fff1c4" stroke="#e7b346" stroke-width="1.6"/>
+<text x="887" y="578" font-size="27" font-weight="700" fill="#785000" >SWARM</text>
+<text x="887" y="615" font-size="20" font-weight="400" fill="#111827" >Captured HTML · CSV · JSON + manifest</text>
+<text x="887" y="648" font-size="18" font-weight="400" fill="#111827" >Public content reference + file checksums</text>
+<path d="M40 817H1395" stroke="#dce2ed"/>
+<text x="40" y="850" font-size="18" font-weight="500" fill="#111827" >User keys stay in wallets. Worker keys stay with the worker. Operational state stays off Arkiv.</text>
+<text x="40" y="879" font-size="17" font-weight="400" fill="#334155" >Arkiv entity lifetime, source coverage and Swarm file retention are separate contracts.</text></svg>

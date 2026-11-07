@@ -1,12 +1,141 @@
-# AXIS — Arkiv eXploration & Intelligence System
+<p align="center">
+  <img src="docs/images/axis-logo.png" alt="AXIS" width="280">
+</p>
 
-AXIS turns verified onchain records into reports you can own and share. Pick a dataset, build filters or ask in English, inspect the returned table, and turn that query into an interactive dashboard. The records, source coverage, dataset definitions and published dashboards live in Arkiv.
+<h1 align="center">Arkiv eXploration &amp; Intelligence System</h1>
 
-Built for **ETHGlobal Mumbai — Build on Arkiv (from scratch)**. The first recorded project commit is [c1545f7](https://github.com/ReneeMattGH/ETHGBL/commit/c1545f79b0a15d029fa09e32e9ad1f5138fef062), dated 6 November 2026. We used existing open-source libraries and public source data; [AI_DISCLOSURE.md](AI_DISCLOSURE.md) explains the development assistance and the runtime English-query feature.
+<p align="center">
+  <strong>Onchain analytics. Wallet-owned reports.</strong><br>
+  Explore verified records, ask a question, and publish a dashboard.<br>
+  Built on <strong>Arkiv</strong>, with public query archives on <strong>Swarm</strong>.
+</p>
 
-[Open AXIS](https://axis-platform-e7ac45525b.vercel.app) · [Open a public dashboard](https://axis-reports-e7ac45525b.vercel.app/d/0xcb7fccae9b8fd715ce0a465687b0e189efb324ce83d07bfd95b781e2902e40c6) · [Source repository](https://github.com/ReneeMattGH/ETHGBL)
+<p align="center">
+  <a href="https://axis-platform-e7ac45525b.vercel.app"><strong>Open workspace ↗</strong></a>
+  &nbsp; · &nbsp;
+  <a href="https://axis-reports-e7ac45525b.vercel.app/d/0xcb7fccae9b8fd715ce0a465687b0e189efb324ce83d07bfd95b781e2902e40c6"><strong>View public dashboard ↗</strong></a>
+  &nbsp; · &nbsp;
+  <a href="https://bah5acgzaour3xpm3cf6bhox4s6wqeulr46ybuzpvskyfp4qh5oug5wvknnea.bzz.limo/"><strong>Open Swarm archive ↗</strong></a>
+</p>
 
-Viewing the report does not require a wallet. Publishing or editing a definition requires its owner's Rabdi wallet. The current Query Studio and saved-report workflow focus on Polygon USDC; the explorer also reads scoped protocol and reference collections. We do not claim complete chain history. The product uses real Arkiv reads; automated tests also contain controlled fixtures.
+<p align="center">
+  <a href="https://docs.arkiv.network/"><img alt="Arkiv · Rabdi testnet" src="https://img.shields.io/badge/Arkiv-Rabdi_testnet-173bff?style=flat-square"></a>
+  <a href="arkiv/swarm.md"><img alt="Swarm · Public archives" src="https://img.shields.io/badge/Swarm-Public_archives-ff9d00?style=flat-square"></a>
+  <a href="LICENSE"><img alt="License · MIT" src="https://img.shields.io/badge/License-MIT-00a878?style=flat-square"></a>
+</p>
+
+<p align="center">
+  <a href="#what-you-can-do">Features</a> ·
+  <a href="#in-action">Screenshots</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#run-locally">Run locally</a> ·
+  <a href="#for-arkiv-judges">Arkiv submission</a>
+</p>
+
+<a href="https://axis-platform-e7ac45525b.vercel.app">
+  <img src="docs/images/axis-landing.jpg" alt="AXIS landing page with its Arkiv analytics workspace introduction" width="100%">
+</a>
+
+## What you can do
+
+AXIS takes a question about onchain activity and turns it into a report you can share. Dataset definitions, published reports, source records and verified coverage live in Arkiv. The current Query Studio and saved-report workflow focus on **Polygon USDC**; the explorer also reads scoped protocol and reference collections.
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Explore the actual data</h3>
+      <p>Browse curated collections with charts, exact-value tables, field schemas and source provenance. See what is covered before trusting a total.</p>
+      <a href="https://axis-platform-e7ac45525b.vercel.app/explore">Open Data Explorer →</a>
+    </td>
+    <td width="50%" valign="top">
+      <h3>Ask in English or build filters</h3>
+      <p>Describe the records you want, review the generated filters and execute the native Arkiv query. Manual controls remain available.</p>
+      <a href="docs/getting-started.md#ask-in-english">How English queries work →</a>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Own and share the report</h3>
+      <p>Save a query scope as a dataset, build a dashboard and publish its definition with your wallet. Readers can open its public URL without signing a transaction.</p>
+      <a href="docs/dashboard-websites.md">Public dashboard websites →</a>
+    </td>
+    <td width="50%" valign="top">
+      <h3>Keep a captured result on Swarm</h3>
+      <p>Archive verified rows as CSV, JSON and a standalone HTML report. An Arkiv entity points to the public files and their manifest checksum.</p>
+      <a href="arkiv/swarm.md">Archive flow and live proof →</a>
+    </td>
+  </tr>
+</table>
+
+## In action
+
+### Activity, composition and exact values
+
+<a href="docs/images/axis-token-activity.jpg">
+  <img src="docs/images/axis-token-activity.jpg" alt="Data Explorer showing verified transfer metrics and a vivid stacked activity chart by transfer-size band" width="100%">
+</a>
+
+### Relationships and wallet concentration
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="docs/images/axis-signature-provenance.jpg"><img src="docs/images/axis-signature-provenance.jpg" alt="Signature provenance flow chart linking ABI sources to function selectors" width="100%"></a>
+      <p><strong>Signature provenance</strong><br>Follow the relationship between ABI sources and observed function selectors.</p>
+    </td>
+    <td width="50%" valign="top">
+      <a href="docs/images/axis-wallet-concentration.jpg"><img src="docs/images/axis-wallet-concentration.jpg" alt="Ranked sending-wallet contribution chart with cumulative transferred-USDC share" width="100%"></a>
+      <p><strong>Wallet concentration</strong><br>Compare ranked contributions with cumulative share in one analytical view.</p>
+    </td>
+  </tr>
+</table>
+
+### See what is actually stored
+
+<a href="docs/images/axis-ingestion-monitor.jpg">
+  <img src="docs/images/axis-ingestion-monitor.jpg" alt="Ingestion Monitor showing stored Arkiv row counts, block entries and per-table totals" width="100%">
+</a>
+
+<sub>These are the original product screenshots supplied for this README. Displayed counts are captures from that moment; live data can change. Click any screenshot to open the full image.</sub>
+
+## Architecture
+
+<a href="docs/images/axis-architecture.svg">
+  <img src="docs/images/axis-architecture.svg" alt="AXIS architecture showing Vercel interfaces, the AWS query API and ingestion worker, wallet-owned Arkiv definitions and verified records, OpenRouter filter planning, and Swarm archive files" width="100%">
+</a>
+
+1. **Verify the source.** The worker extracts finalized Polygon data, writes records to Arkiv, reads them back and publishes verified coverage.
+2. **Query and publish.** The API validates source scopes and filters. A user's wallet signs its dataset and dashboard definitions; the public viewer reads them independently.
+3. **Archive the result.** Swarm holds captured report files. Arkiv holds their public reference and checksum. English translation receives the request and selected schemas, not stored record payloads.
+
+The API and worker keep operational state on persistent disk. User signing keys stay in their wallets; the ingestion key stays with the worker. Entity expiry, source-provider trust and Swarm retention remain separate concerns.
+
+[Architecture and trust boundaries](docs/architecture.md) · [Editable Mermaid source](docs/architecture.mmd) · [Deployment details](docs/deployment.md)
+
+## Run locally
+
+Use **Node.js 24** and npm, the versions used for local validation. In a fresh checkout:
+
+```powershell
+npm.cmd ci
+if (-not (Test-Path .env.local)) { Copy-Item .env.example .env.local }
+```
+
+Add the read settings to `.env.local`:
+
+```dotenv
+ARKIV_ACCESS_KEY=your_arkiv_access_key
+AXIS_INDEXER_ADDRESS=0xe7ac45525bd9fec84902371aaa65cf53c7d89909
+```
+
+```powershell
+npm.cmd run dev
+```
+
+Open **[localhost:3000](http://localhost:3000)**. Get an access key from the [Arkiv Hub](https://hub.arkiv.network/access-keys). Browsing existing data does not need the ingestion private key. Publishing your own report requires a funded Rabdi wallet; English input also needs server-side OpenRouter configuration.
+
+[Complete setup guide](docs/getting-started.md) · [English query settings](docs/getting-started.md#ask-in-english) · [Worker and upload setup](docs/getting-started.md#worker-and-uploads)
+
 
 ## For Arkiv judges
 
@@ -21,6 +150,11 @@ Viewing the report does not require a wallet. Publishing or editing a definition
 | Arkiv + Swarm bonus: archive links, code, reproduction and remaining proof | [arkiv/swarm.md](arkiv/swarm.md) |
 
 The public frontend, API health check and report page returned HTTP 200 on 7 November 2026. The report's real Arkiv definition contains eight widgets. A separate live coverage check at 02:18:54 UTC found 8,726 verified transfers in its stated source range, with no coverage gaps. These are dated observations, not fixed future counts. [Reach and demo details](arkiv/reach.md).
+
+The Arkiv + Swarm integration includes a verified 1,007-row archive. The actual gateway postage batch/buyer details and the demo-video moment are still unavailable; [the bonus evidence](arkiv/swarm.md) marks those gaps explicitly.
+
+<details>
+<summary><strong>Writer wallets and a runnable Arkiv query</strong></summary>
 
 ### Wallets that wrote the example entities
 
@@ -61,144 +195,53 @@ Invoke-RestMethod -Uri $axisRpc -Method Post -ContentType 'application/json' -Bo
 
 Expected at the recorded check: one entity owned by the definition wallet above, an expiry block, and a document containing the eight-widget report. Entities can later change or expire. The [proof file](arkiv/proof.json) includes a source record key and coverage bounds for independent inspection.
 
-## Implementation notes
+</details>
 
-- [Dashboard websites](docs/dashboard-websites.md): a separate viewer serves published reports at `/d/<entity-key>`.
-- [Deployment](docs/deployment.md): Vercel frontend/viewer and a persistent API/worker host. Running the app locally and verifying a public deployment are separate checks.
-- [Bulk publication](docs/bulk-publication.md), [ingestion commands](docs/bulk-ingestion.md) and [curated coverage](docs/curated-ingestion.md): staged extraction, verified publication and unavailable provider features are recorded separately.
-- [Arkiv + Swarm](arkiv/swarm.md): a real 1,007-row archive and its evidence. Actual gateway postage batch/buyer/retention and complete bonus proof remain unresolved; this is not a claim that the bonus is already qualified.
+## Build and validate
 
-## Stack
-
-- Next.js 16 (App Router, Turbopack)
-- React 19 + TypeScript
-- Tailwind CSS v4 + shadcn/ui (radix-nova)
-- Recharts
-- `@arkiv-network/sdk` 1.0.1 + viem
-
-## Run locally
-
-```bash
-npm install
-npm run dev
-```
-
-Open <http://localhost:3000>.
-
-Production build:
-
-```bash
-npm run build
-npm start
-```
-
-## Arkiv configuration
-
-The current workspace integration is in `src/lib/axis/`; lower-level query helpers also remain in `src/lib/arkiv/`. Read credentials stay server-side. The worker signing key belongs only in ignored `.env.worker.local`, not in the website configuration.
-
-For a fresh checkout, copy `.env.example` to `.env.local` and set the read configuration below. The dedicated indexer address is public; its private key is not needed to read reports.
-
-```bash
-ARKIV_ACCESS_KEY=your_key_here
-AXIS_INDEXER_ADDRESS=0xe7ac45525bd9fec84902371aaa65cf53c7d89909
-# Optional: defaults to https://rpc.rabdi.db-chain.testnet.arkiv.network
-ARKIV_RPC_URL=
-ARKIV_QUERY_TIMEOUT_MS=15000
-```
-
-- Get an access key at <https://hub.arkiv.network/access-keys>.
-- Without a key the app still works against the public RPC, but that endpoint is heavily rate-limited. The UI shows a "Public RPC" badge and an explicit warning rather than pretending the connection is dedicated.
-- `ARKIV_RPC_URL` overrides the SDK's default Rabdi endpoint. The access key is appended as the final URL path segment, and only the host is ever reported to the browser.
-- `ARKIV_QUERY_TIMEOUT_MS` is clamped to `3000–60000` ms.
-- Never prefix the key with `NEXT_PUBLIC_`. No secrets are stored in `localStorage` or sent through dashboard configurations.
-- A misconfigured `ARKIV_RPC_URL` surfaces as a `CONFIG` error in the connection panel instead of silently falling back.
-
-Only **Rabdi Testnet** (chain ID 7794095, tGLM) is offered. The SDK also exports a localhost chain, but a local node is unreachable from the hosted server, so it is intentionally omitted.
-
-## English queries with OpenRouter
-
-Query Studio offers **Manual query** and **Ask in English** for the selected user datasets. Add these server-only settings to `.env.local` and restart the development server:
-
-```dotenv
-OPENROUTER_API_KEY=your_openrouter_key
-OPENROUTER_MODEL=google/gemini-2.5-flash
-```
-
-Choose a model that supports [OpenRouter structured outputs](https://openrouter.ai/docs/guides/features/structured-outputs). The server sends the request and selected dataset schemas, without stored record payloads. It validates the typed plan, converts USDC amounts using exact base units, and compiles the native query with the existing trusted-owner and verified-coverage restrictions. Missing credentials leave manual querying available.
-
-The main workflow is **select datasets → describe records → Execute query**. This generates and validates the filters, executes the Arkiv read, and reveals the Run query panel with the executed predicate and resulting table. **Generate query** previews without executing; **Run query** runs that prepared plan. **Edit manually** moves the generated filters into the manual controls. Both modes share result pagination, complete-result CSV export, dashboard creation and saving results as a dataset. Multiple sources retain their own filters and combine with OR. Unsupported operations and ambiguous requests ask for clarification; arbitrary SQL, joins, aggregations and amount-based sorting are not translated into executable queries.
-
-`GET /api/axis/query-assistant` reports availability; `POST /api/axis/query-assistant` generates a reviewed plan without executing it. Requests are bounded to 2,000 characters, 20 selected sources, two simultaneous generations, 20 generations per minute per server process and a 45-second provider timeout. An expired or changed source is checked again through the ordinary query endpoint when Run query is clicked.
-
-## Browser read caching
-
-Dataset lists, definitions, schemas, catalog previews, chart analytics and dashboard results reuse successful reads in memory and in the current tab's session storage. Revisiting a view or reloading the tab renders the saved data immediately. Copies are fresh for 30 seconds (or the view's shorter polling interval); older copies refresh in the background, and copies older than five minutes are discarded on reuse. The original Arkiv read timestamps and exact values are retained. First visits still require the network.
-
-Refresh buttons and explicit Query Studio execution always request fresh data. Successful dataset/dashboard writes, renewals and deletions invalidate browser reads. Keys include the API namespace, owner, source datasets/imports, filters and pagination to prevent results crossing scopes. A failed background refresh keeps the last successful visuals with an error notice. The cache is bounded to 80 entries and approximately 3 MB of browser storage; unavailable storage falls back to memory. Configuration, wallet challenges, RPC, worker status, English translations, exports and mutations are never persisted. Existing API response headers remain `no-store`.
-
-## Arkiv read performance
-
-The server reuses its configured SDK reader, coalesces identical in-flight reads, and limits node work to eight concurrent queries per process with a bounded queue. Independent coverage/alert reads run together. Count-only checks return no entity payload, schema probes return only the key and field schema, and transfer reads request only fields used by tables, provenance and exact analytics. Scan pages do not recalculate counts.
-
-Large analytics/export scans use four disjoint ranges of entity keys with cursor pagination inside each range. Small responses need one page. Ranges retain the entire trusted-owner/source/filter predicate, return results in key order, and share the existing 20,000-row cap. Any range failure rejects the complete result. The final fresh count and verified coverage checks still run; completed raw reads are not reused by the server as a replacement for those checks. Arkiv reads the latest block on each call, so this does not claim a database snapshot across pages.
-
-Run a read-only live benchmark with `npx.cmd tsx scripts/axis-read-benchmark.ts <dataset-key>`. Add `--verify` to compare all aggregates against another fresh sequential scan of the same frozen predicate. It reports timings, RPC calls, decoded response characters and parallelism without printing credentials or RPC endpoints. On one 7,380-transfer live scope, analytics fell from 51.4 seconds to 20.9 seconds and decoded response text from 21.4 million to 9.5 million characters. These are observed local measurements; network latency and source size affect subsequent runs.
-
-## Routes
-
-| Route | Purpose |
+| Component | Technology |
 | --- | --- |
-| `/` | Product landing page |
-| `/overview` | Workspace, public dashboards and the connected wallet's datasets |
-| `/explore` | Curated collections, scoped charts, previews and provenance |
-| `/query` | Manual/English filters, returned tables, exports and save-as-dataset |
-| `/datasets` | The connected wallet's dataset library |
-| `/datasets/[id]` | Verified source coverage, transfers and owner controls |
-| `/dashboards` | Published report library; cards open the editor |
-| `/dashboards/new`, `/dashboards/[id]/edit` | Report builder; existing-definition edits require its owner |
-| `/dashboards/[id]` | Public report with filters and refresh |
-| `/snapshots` | Arkiv-published references to optional Swarm archives |
-| `/ingestion`, `/settings` | Import monitoring and connection settings |
-| `/api/axis/*` | Server-side workspace reads, query translation and authorized operations |
-| `/api/reports/[id]/*` | Public-viewer reads limited to that report's sources |
-
-## How real Arkiv access works
-
-- Queries execute through `runQuery(client, { query, select, limit, offset, count })` from `@arkiv-network/sdk/query`.
-- The query language is the node's own predicate syntax (`str('v')`, `u64(1)`, `key(0x…)`, `BETWEEN`, `STARTSWITH`, `ORDER BY $expiresAt:u64 DESC`, …). Invalid predicates surface the node's structured error kind and position.
-- Pages are capped at 100 rows by the node; the UI reports both the page rows and the node-reported total count.
-- `$createdAt` / `$updatedAt` / `$expiresAt` are **block numbers**, not wall-clock timestamps. The UI labels them as blocks.
-- Scope/sequence guards prevent late responses from replacing a newer query. Shared read requests can finish for other consumers; English-generation requests use cancellation as well.
-- Access keys and RPC URLs are redacted from error details before they reach the client.
-- Numeric parsing respects the Arkiv type tag: integers outside the safe JS range are rejected rather than rounded, unsigned types reject negative values, and a field observed with conflicting types is marked `mixed` and never charted as a number.
-
-## Testing
+| Interface | Next.js 16, React 19, TypeScript, Tailwind CSS and Radix UI |
+| Queryable records and definitions | Arkiv Rabdi, `@arkiv-network/sdk` and viem |
+| Public file archives | Swarm, `@ethersphere/bee-js` |
+| Optional English query planning | OpenRouter with structured outputs |
+| Source preparation | Polygon JSON-RPC, verified adapters, DuckDB and Parquet staging |
 
 ```powershell
 npm.cmd run typecheck
 npm.cmd run test:unit -- --maxWorkers=2
-npm.cmd run test:live
+npm.cmd run lint
+npm.cmd run build -- --webpack
 ```
 
-`test:live` calls the real `/api/arkiv/status` and `/api/arkiv/query` routes and asserts connection, block metadata, real entities, stable key pagination, zero-result success, invalid-query rejection, refresh re-execution and validation. It exits non-zero and prints the actual failure when the node is unreachable or rate-limited; it never substitutes fabricated results.
+Unit and controlled browser tests are separate from live-provider evidence. The production command above uses the webpack build path used for local release validation; development uses Turbopack. [Validation and live checks](docs/getting-started.md#validate-and-build).
 
-## Persistence and live refresh
+<details>
+<summary><strong>Query performance and caching</strong></summary>
 
-Published datasets and reports are wallet-owned Arkiv entities. Dashboard documents store queries, chart settings and layouts; their source records and verified coverage also live in Arkiv. Browser state holds unfinished drafts, preferences and bounded read caches. It is not the authoritative published report database.
+On one live scope of 7,380 transfers, local analytics improved from **51.4 seconds to 20.9 seconds**, with the same aggregates as a fresh sequential scan. This is a measured scope, not a universal latency promise. The server uses smaller projections, count-only verification, shared simultaneous reads and four disjoint scan ranges.
 
-Report polling uses chained timers, with manual refresh and last-read metadata. Full-scope analytics scan the matching verified records up to the 20,000-row cap; this is separate from a paginated table. Missing records, coverage mismatches and oversized scopes fail explicitly. Definitions and worker records start with 30-day lifetimes; job progress uses seven days. Renewal must be run to keep entities available. See [schema and retention](arkiv/schema.md).
+Cached dataset and chart views render immediately on revisits within the current tab. Older copies refresh in the background, and explicit Execute/Refresh actions make fresh reads. Copies older than five minutes are discarded on reuse. Missing coverage and refresh failures are surfaced to the reader.
 
-## Code map
+[Performance implementation, limits and benchmark](docs/architecture.md#query-performance) · [Browser caching](docs/architecture.md#browser-caching)
 
-- `src/components/axis/`: workspace, dataset library, Query Studio, builder and analytical charts.
-- `src/lib/axis/`: schemas, verified store reads, ingestion, query validation and source adapters.
-- `src/lib/axis/bulk/`: extraction, reference/protocol enrichment and verified publication.
-- `src/lib/arkiv/`: additional query-language and lower-level reader utilities.
-- `scripts/`: workers, live checks, benchmarking and deployment helpers.
-- `arkiv/`: judging documents and public proof.
+</details>
+
+## Guides
+
+| Guide | What it covers |
+| --- | --- |
+| [Getting started](docs/getting-started.md) | Environment, English queries, local worker, build and route map |
+| [Architecture](docs/architecture.md) | Ownership, trust boundaries, read performance and caching |
+| [Public report websites](docs/dashboard-websites.md) | Separate viewer hosting and per-dashboard URLs |
+| [Deployment](docs/deployment.md) | Vercel, persistent API/worker hosting, signer handoff and operation |
+| [Bulk ingestion](docs/bulk-ingestion.md) | Extraction, checkpoints, publication and recovery |
+| [Curated source coverage](docs/curated-ingestion.md) | Adapter scope, reference sources and unavailable data |
+| [Publication evidence](docs/bulk-publication.md) | Staged versus published records and real readback results |
+| [Swarm bonus](arkiv/swarm.md) | Linked archive, upload/read reproduction and remaining evidence |
 
 ## License and AI disclosure
 
-AXIS code is available under the [MIT license](LICENSE). Third-party dependencies and imported reference data retain their own licenses; source notices are preserved in [docs/licenses](docs/licenses) and described in [curated ingestion](docs/curated-ingestion.md).
+Built for **ETHGlobal Mumbai — Build on Arkiv (from scratch)**. The first recorded project commit is [c1545f7](https://github.com/ReneeMattGH/ETHGBL/commit/c1545f79b0a15d029fa09e32e9ad1f5138fef062), dated 6 November 2026.
 
-We used OpenAI Codex for development and documentation assistance. The product's English-to-filter feature uses OpenRouter at runtime. [AI_DISCLOSURE.md](AI_DISCLOSURE.md) explains both uses.
+AXIS code is available under the [MIT license](LICENSE). Third-party dependencies and imported reference data retain their own licenses; source notices are preserved in [docs/licenses](docs/licenses). We used OpenAI Codex for development and documentation assistance. [AI_DISCLOSURE.md](AI_DISCLOSURE.md) distinguishes that work from the runtime OpenRouter query feature.

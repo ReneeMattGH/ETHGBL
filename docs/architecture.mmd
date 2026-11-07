@@ -1,0 +1,49 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial, sans-serif","fontSize":"17px","primaryTextColor":"#111827","lineColor":"#64748b","edgeLabelBackground":"#ffffff","clusterBkg":"#f8faff","clusterBorder":"#cbd5e1"},"flowchart":{"htmlLabels":false,"curve":"basis","nodeSpacing":36,"rankSpacing":54,"padding":22}}}%%
+flowchart TB
+  subgraph interfaces["INTERFACES · Vercel"]
+    direction LR
+    Workspace["AXIS workspace<br/>Explore · Query · Build · Archive"]
+    Viewer["Public report viewer<br/>Read-only dashboards and filters"]
+    Wallet["Owner wallet<br/>Signs definition changes"]
+  end
+
+  subgraph services["APPLICATION SERVICES · AWS"]
+    direction LR
+    API["AXIS API<br/>Validate scope · Query · Verify files"]
+    Worker["Ingestion worker<br/>Extract · Normalize · Read back"]
+    State[("Persistent worker state<br/>Jobs · Locks · Nonces · Checkpoints")]
+  end
+
+  Polygon["Polygon RPC + reference sources<br/>Finalized blocks and source records"]
+  Arkiv[("ARKIV RABDI<br/>Records + verified coverage<br/>Wallet-owned dataset and report definitions")]
+  Swarm[("SWARM<br/>Archived HTML · CSV · JSON<br/>Public content reference + file checksums")]
+  AI["OpenRouter<br/>English request → candidate filter plan"]
+
+  Workspace -->|Workspace requests| API
+  Viewer -->|Scoped report reads| Arkiv
+  Wallet -->|Publish · Edit · Renew| Arkiv
+  Polygon -->|Source extraction| Worker
+  Worker -->|Verified records + manifests| Arkiv
+  API -->|Fresh, scoped reads| Arkiv
+  API -.->|Prompt + selected schemas| AI
+  API -->|Upload + checksum readback| Swarm
+  Arkiv -.->|Snapshot entity references files| Swarm
+  Worker --- State
+  API --- State
+
+  classDef product fill:#173bff,color:#ffffff,stroke:#173bff,stroke-width:2px;
+  classDef reader fill:#e7efff,color:#0f172a,stroke:#173bff,stroke-width:2px;
+  classDef ownership fill:#fff5b5,color:#0f172a,stroke:#d99b00,stroke-width:2px;
+  classDef service fill:#ffffff,color:#0f172a,stroke:#64748b,stroke-width:1.5px;
+  classDef storage fill:#e8ddff,color:#2b1160,stroke:#9500ff,stroke-width:2px;
+  classDef archive fill:#fff0c7,color:#4c3200,stroke:#ef9c00,stroke-width:2px;
+  classDef source fill:#d9faf2,color:#064e3b,stroke:#0b9d7a,stroke-width:2px;
+  classDef ai fill:#ffe4f0,color:#831843,stroke:#ee2c82,stroke-width:2px;
+  class Workspace product;
+  class Viewer reader;
+  class Wallet ownership;
+  class API,Worker,State service;
+  class Arkiv storage;
+  class Swarm archive;
+  class Polygon source;
+  class AI ai;
