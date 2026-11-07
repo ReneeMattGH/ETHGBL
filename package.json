@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "platform:prepare": "tsx scripts/axis-platform-prepare.ts",
+    "platform:deploy": "tsx scripts/axis-platform-deploy.ts",
+    "platform:verify": "tsx scripts/axis-deployment-check.ts",
+    "aws:template": "tsx deploy/aws/template.ts",
+    "aws:release": "tsx scripts/axis-aws-release.ts",
+    "worker:handoff": "tsx scripts/axis-worker-handoff.ts",
+    "viewer:prepare": "tsx scripts/axis-viewer.ts",
+    "viewer:deploy": "tsx scripts/axis-viewer-deploy.ts",
+    "swarm": "tsx scripts/axis-swarm.ts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -14,14 +23,16 @@
     "worker:once": "tsx scripts/axis-worker.ts --once",
     "test:e2e": "playwright test",
     "worker:renew": "tsx scripts/axis-renew.ts",
+    "bulk": "tsx scripts/axis-bulk.ts",
+    "bulk:job": "tsx scripts/axis-bulk-job.ts",
     "test:axis:live": "tsx scripts/axis-live.ts",
     "typecheck": "tsc --noEmit",
     "test:axis:ownership": "tsx scripts/axis-owner-check.ts",
-    "test:axis:continuous": "tsx scripts/axis-continuous-check.ts",
-    "dashboard:seed": "tsx scripts/axis-prebuilt.ts"
+    "test:axis:continuous": "tsx scripts/axis-continuous-check.ts"
   },
   "dependencies": {
     "@arkiv-network/sdk": "^1.0.1",
+    "@ethersphere/bee-js": "13.2.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.2",
     "lucide-react": "^1.70.0",
@@ -37,6 +48,7 @@
     "viem": "^2.57.16"
   },
   "devDependencies": {
+    "@duckdb/node-api": "1.4.5-r.1",
     "@playwright/test": "^1.65.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
