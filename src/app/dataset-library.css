@@ -1,0 +1,77 @@
+/* Wallet-owned datasets. Keep the list focused on the records and their actions. */
+.axis-dataset-detail { display:flex; flex-direction:column; gap:20px; min-width:0; }
+.axis-dataset-detail .axis-stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.axis-dataset-detail .axis-button,
+.axis-owned-datasets .axis-button,
+.axis-form-page .axis-button { min-height:32px; padding:6px 10px; font-size:14px; border-radius:6px; }
+.axis-form-page .axis-form-stack > .axis-button { align-self:flex-start; }
+.axis-dataset-detail .axis-actions { gap:7px; }
+.axis-dataset-detail .axis-actions .axis-inline-link { font-size:14px; }
+.axis-owned-datasets { display:flex; flex-direction:column; gap:22px; min-width:0; }
+.axis-owned-datasets .axis-intro { flex-direction:row; align-items:center; }
+.axis-owned-panel { min-width:0; overflow:hidden; border:1px solid var(--axis-box-border); border-radius:10px; background:#fff; }
+.axis-owned-panel .axis-empty { min-height:320px; gap:20px; }
+.axis-owned-panel .axis-empty > svg { color:var(--axis-accent); }
+.axis-owned-panel .axis-empty h2 { font-size:22px; font-weight:600; letter-spacing:-.5px; }
+.axis-owned-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; padding:18px 20px; border-bottom:1px solid var(--axis-border); }
+.axis-owned-search { display:flex; align-items:center; gap:10px; min-width:0; width:min(400px,100%); min-height:42px; padding:0 12px; border:1px solid var(--axis-box-border); border-radius:7px; }
+.axis-owned-search:focus-within { border-color:var(--axis-accent); box-shadow:0 0 0 3px #1743ff0d; }
+.axis-owned-search > svg { flex-shrink:0; }
+.axis-owned-search input { min-width:0; width:100%; height:40px; padding:0; border:0; background:transparent; color:#000; font-size:15px; outline:none; }
+.axis-owned-search input:focus-visible { outline:none; }
+.axis-owned-search input::placeholder { color:#000; opacity:1; }
+.axis-owned-search input::-webkit-search-cancel-button { display:none; }
+.axis-owned-search button { display:grid; place-items:center; width:28px; height:28px; padding:0; flex-shrink:0; border:0; border-radius:4px; background:transparent; color:#000; }
+.axis-owned-search button:hover { background:#f0f3fa; }
+.axis-owned-filters { display:flex; align-items:center; gap:20px; margin-left:auto; }
+.axis-owned-filters > span { font-size:14px; font-variant-numeric:tabular-nums; }
+.axis-owned-select { position:relative; }
+.axis-owned-select select { appearance:none; padding:9px 34px 9px 12px; min-height:40px; border:1px solid var(--axis-box-border); border-radius:7px; background:#fff; color:#000; font-size:15px; cursor:pointer; }
+.axis-owned-select > svg { position:absolute; right:11px; top:13px; pointer-events:none; }
+.axis-owned-error { padding:16px 20px; }
+.axis-owned-cards { padding:14px; }
+@media (max-width:760px) { .axis-owned-cards { padding:12px; } }
+.axis-owned-table-wrap { overflow-x:auto; }
+.axis-owned-table { width:100%; border-collapse:collapse; text-align:left; }
+.axis-owned-table th { padding:13px 20px; background:#fafbfe; border-bottom:1px solid var(--axis-border); font-size:14px; font-weight:550; white-space:nowrap; }
+.axis-owned-table td { padding:20px; border-bottom:1px solid #edf0f5; font-size:14px; vertical-align:middle; }
+.axis-owned-table tr:last-child td { border-bottom:0; }
+.axis-owned-table tbody tr:hover { background:#fcfdff; }
+.axis-owned-name { display:flex; align-items:flex-start; gap:12px; min-width:180px; }
+.axis-owned-name > div { min-width:0; }
+.axis-owned-name a { color:#000; font-size:16px; font-weight:600; line-height:1.5; overflow-wrap:anywhere; }
+.axis-owned-name a:hover { text-decoration:underline; text-underline-offset:3px; }
+.axis-owned-name p { max-width:410px; margin-top:5px; font-size:14px; line-height:1.6; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.axis-owned-icon { display:grid; place-items:center; width:38px; height:38px; flex-shrink:0; border:1px solid var(--axis-box-border); border-radius:8px; background:#f0f3ff; color:var(--axis-accent); }
+.axis-owned-source { display:flex; flex-direction:column; gap:4px; white-space:nowrap; }
+.axis-owned-source .axis-mono { font-size:13px; }
+.axis-owned-status { display:inline-flex; align-items:center; gap:7px; padding:5px 9px; border:1px solid var(--axis-box-border); border-radius:5px; background:#f6f7fa; font-size:14px; white-space:nowrap; }
+.axis-owned-status i { width:6px; height:6px; border-radius:50%; background:#737b89; }
+.axis-owned-status.is-enabled { border-color:#d6e9df; background:#f1f8f4; }
+.axis-owned-status.is-enabled i { background:#218451; }
+.axis-owned-table time { white-space:nowrap; font-variant-numeric:tabular-nums; }
+.axis-owned-actions { white-space:nowrap; text-align:right; }
+.axis-owned-actions .axis-button { min-height:32px; padding:6px 10px; font-size:14px; }
+.axis-owned-actions .axis-button + .axis-button { margin-left:8px; }
+.axis-owned-sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+@media (max-width:1200px) { .axis-owned-table td,.axis-owned-table th { padding:16px 13px; } .axis-owned-name { min-width:140px; } }
+@media (max-width:760px) {
+  .axis-owned-datasets .axis-intro { flex-wrap:wrap; }
+  .axis-owned-toolbar { padding:16px; gap:12px; }
+  .axis-owned-search { width:100%; }
+  .axis-owned-search input { font-size:16px; }
+  .axis-owned-filters { justify-content:space-between; width:100%; }
+  .axis-owned-table-wrap { padding:0 16px; }
+  .axis-owned-table,.axis-owned-table tbody { display:block; }
+  .axis-owned-table thead { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+  .axis-owned-table tbody tr { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; padding:20px 0; border-bottom:1px solid var(--axis-border); }
+  .axis-owned-table tbody tr:last-child { border-bottom:0; }
+  .axis-owned-table td { display:block; padding:0; border:0; min-width:0; }
+  .axis-owned-table td:first-child { grid-column:1 / -1; }
+  .axis-owned-table td[data-label]::before { display:block; margin-bottom:7px; content:attr(data-label); font-size:14px; font-weight:550; }
+  .axis-owned-table td.axis-owned-actions { display:flex; align-items:flex-end; justify-content:flex-end; gap:8px; }
+  .axis-owned-actions .axis-button + .axis-button { margin:0; }
+  .axis-owned-actions .axis-button { min-height:32px; }
+  .axis-owned-name { min-width:0; }
+}
+@media (max-width:380px) { .axis-owned-table tbody tr { grid-template-columns:minmax(0,1fr); } .axis-owned-table td.axis-owned-actions { justify-content:flex-start; } }

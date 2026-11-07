@@ -1,8 +1,32 @@
 "use client";
 import type { PlatformConfig } from "@/lib/axis/model";
+import type { SwarmStatus } from "@/lib/axis/swarm-model";
 import { useApi, PageIntro, Panel, Notice, RefreshButton } from "./shared";
 import { useAxisWallet } from "./wallet";
 export function AxisSettings() {
-  const config = useApi<PlatformConfig>("config"), wallet = useAxisWallet();
-  return <><PageIntro title="Settings & connections" description="Local runtime configuration, source connection, wallet identity and retention."><RefreshButton loading={config.loading} onClick={config.refresh} /></PageIntro>{config.error && <Notice tone="error">{config.error}</Notice>}{config.data?.error && <Notice tone="error">{config.data.error}</Notice>}<Panel title="Connections"><dl className="axis-details"><dt>Polygon Mainnet RPC</dt><dd>{config.data?.polygonConfigured ? "Configured on the server" : "Not configured"}</dd><dt>Finalized Polygon block</dt><dd>{config.data?.finalizedBlock ?? "Unavailable"}</dd><dt>Arkiv access key</dt><dd>{config.data?.arkivConfigured ? "Configured on the server" : "Not configured"}</dd><dt>Arkiv network</dt><dd>Rabdi · chain 7794095 · tGLM</dd><dt>Worker publisher</dt><dd>{config.data?.writer ?? "Unavailable"}</dd><dt>Worker process</dt><dd>{config.data?.worker.running ? "Running" : "Offline"}</dd><dt>Connected wallet</dt><dd>{wallet.address ?? "No wallet connected"}</dd></dl><button className="axis-button secondary" onClick={() => void wallet.connect().catch(() => {})}>Connect / switch wallet</button></Panel><Panel title="Local operation"><p>Start the website with <code>npm.cmd run dev</code> and the ingestion process in a separate terminal with <code>npm.cmd run worker</code>.</p><p>RPC credentials are read from <code>.env.local</code>. Only the worker loads <code>.env.worker.local</code>. Restart the applicable process after changing credentials.</p><p>Queue and checkpoint files live in the ignored <code>.axis</code> directory. Analytical records, coverage, saved queries and published dashboards are read from Arkiv.</p></Panel><Panel title="Retention & calculation policy"><p>Definitions and analytical records initially live for 30 days; ingestion statuses live for 7 days. Owners can renew their definitions. Worker-owned records can be renewed with <code>npm.cmd run worker:renew</code> before expiry. An expired definition is reported as unavailable.</p><p>Amounts are summed as integer USDC base units, then formatted at six decimals. Gross transferred amount includes mint, burn, zero-value and self-transfer events. Unique wallet counts use the union of sender and recipient addresses, including the zero address if present.</p><p>Complete-scope analytics currently support up to 20,000 records per query. Larger scans fail explicitly and require a narrower dataset. Light appearance is fixed for this application.</p></Panel></>;
+  const config = useApi<PlatformConfig>("config"), swarm = useApi<SwarmStatus>("swarm/status"), wallet = useAxisWallet();
+  const data = config.error ? null : config.data, swarmData = swarm.error ? null : swarm.data;
+  const connectionLabel = (configured: boolean | undefined, failed: boolean) => failed ? "Unavailable" : configured === undefined ? "Checking" : configured ? "Configured" : "Not configured";
+  return <>
+    <PageIntro title="Settings & connections"><RefreshButton loading={config.loading || swarm.loading} onClick={() => { config.refresh(); swarm.refresh(); }} /></PageIntro>
+    {config.error && <Notice tone="error">{config.error}</Notice>}
+    {data?.error && <Notice tone="error">{data.error}</Notice>}
+    {swarm.error && <Notice tone="error">Swarm: {swarm.error}</Notice>}
+    <div className="axis-settings-grid">
+      <Panel title="Connections"><dl className="axis-details">
+        <dt>Polygon RPC</dt><dd><span className={`axis-badge ${data?.polygonConfigured ? "success" : ""}`}>{connectionLabel(data?.polygonConfigured, Boolean(config.error))}</span></dd>
+        <dt>Finalized block</dt><dd className="axis-mono">{data?.finalizedBlock ?? "—"}</dd>
+        <dt>Arkiv</dt><dd><span className={`axis-badge ${data?.arkivConfigured ? "success" : ""}`}>{connectionLabel(data?.arkivConfigured, Boolean(config.error))}</span></dd>
+        <dt>Swarm uploads</dt><dd><span className={`axis-badge ${swarmData?.configured ? "success" : ""}`}>{connectionLabel(swarmData?.configured, Boolean(swarm.error))}</span></dd>
+        <dt>Network</dt><dd>Rabdi · 7794095 · tGLM</dd>
+        <dt>Worker</dt><dd><span className={`axis-badge ${data?.worker.running ? "success" : ""}`}>{config.error ? "Unavailable" : !data ? "Checking" : data.worker.running ? "Running" : "Offline"}</span></dd>
+        <dt>Record publisher</dt><dd className="axis-mono">{data?.writer ?? "—"}</dd>
+      </dl></Panel>
+      <div className="axis-settings-stack">
+        <Panel title="Wallet"><div className="axis-wallet-identity"><span className={`axis-badge ${wallet.address ? "success" : ""}`}>{wallet.address ? "Connected" : "Not connected"}</span><span className="axis-mono">{wallet.address ?? "Connect to manage your definitions."}</span></div><button className="axis-button secondary" disabled={wallet.busy} onClick={() => void wallet.connect().catch(() => {})}>{wallet.busy ? "Connecting…" : "Connect / switch wallet"}</button></Panel>
+        <details className="axis-reference"><summary>Local runtime</summary><dl className="axis-details"><dt>Website</dt><dd><code>npm.cmd run dev</code></dd><dt>Worker</dt><dd><code>npm.cmd run worker</code></dd><dt>RPC configuration</dt><dd><code>.env.local</code></dd><dt>Worker identity</dt><dd><code>.env.worker.local</code></dd><dt>Local queue</dt><dd><code>.axis/</code></dd></dl><p>Restart the relevant process after changing credentials. Analytical records and published definitions are read from Arkiv.</p></details>
+        <details className="axis-reference"><summary>Retention & calculation policy</summary><ul><li>Definitions and records: 30 days. Ingestion statuses: 7 days.</li><li>Owners renew definitions; the worker renews records with <code>npm.cmd run worker:renew</code>.</li><li>USDC totals use integer base units, displayed at six decimals.</li><li>Gross volume includes mint, burn, zero-value and self-transfer events.</li><li>Unique wallets include sender and recipient addresses, including the zero address.</li><li>Maximum 20,000 records per analytics query; narrow the scope for larger datasets.</li></ul></details>
+      </div>
+    </div>
+  </>;
 }

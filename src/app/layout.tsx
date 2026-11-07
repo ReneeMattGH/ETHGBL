@@ -4,6 +4,13 @@ import { AppProviders } from "@/components/providers/app-providers";
 import { AppShell } from "@/components/app-shell";
 import "./globals.css";
 import "./axis.css";
+import "./dashboard-catalog.css";
+import "./dataset-library.css";
+import "./catalog.css";
+import "./analytics.css";
+import "./dashboard-builder.css";
+import "./workspace-theme.css";
+import "./landing.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,7 +24,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "AXIS — Arkiv Exploration & Intelligence",
+    default: "AXIS — Arkiv eXploration and Intelligence System",
     template: "%s · AXIS",
   },
   description:
